@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+audit_log.json
+processed_submissions.txt
+debug_moodle.py
+*.tmp
