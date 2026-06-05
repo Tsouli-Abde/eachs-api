@@ -8,6 +8,7 @@ from models import EvaluationRequest, EvaluationResponse
 from evaluator import evaluate
 from audit import write_log, update_human_decision, get_all_logs
 from collections import defaultdict
+from fastapi.responses import HTMLResponse, FileResponse
 import tempfile
 import shutil
 
@@ -349,5 +350,17 @@ def get_kappa():
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    with open("dashboard.html", "r") as f:
+    with open("dashboard.html", "r", encoding="utf-8") as f:
         return f.read()
+
+@app.get("/dashboard.charts.js")
+def charts_js():
+    return FileResponse("dashboard.charts.js", media_type="application/javascript")
+
+@app.get("/dashboard.demo.js")
+def demo_js():
+    return FileResponse("dashboard.demo.js", media_type="application/javascript")
+
+@app.get("/dashboard.app.js")
+def app_js():
+    return FileResponse("dashboard.app.js", media_type="application/javascript")

@@ -9,13 +9,17 @@ LOG_FILE = Path("audit_log.json")
 def _load_logs() -> list:
     if not LOG_FILE.exists():
         return []
-    with open(LOG_FILE, "r") as f:
-        return json.load(f)
-
+    try:
+        content = LOG_FILE.read_text(encoding="utf-8-sig").strip()
+        if not content:
+            return []
+        return json.loads(content)
+    except (json.JSONDecodeError, Exception):
+        return []
 
 def _save_logs(logs: list):
-    with open(LOG_FILE, "w") as f:
-        json.dump(logs, f, ensure_ascii=False, indent=2)
+    with open(LOG_FILE, "w", encoding="utf-8", errors="replace") as f:
+        json.dump(logs, f, ensure_ascii=True, indent=2)
 
 
 def write_log(request, result: dict) -> str:

@@ -116,6 +116,18 @@ RESPONSES = {
         "average": "Les tests unitaires testent une petite partie du code. Les tests d'intégration testent plusieurs composants ensemble. Les tests end-to-end testent toute l'application. Les tests unitaires sont les plus rapides et les tests E2E les plus lents.",
         "weak": "Il y a plusieurs types de tests. Les tests unitaires testent des petites choses, les tests d'intégration testent plus de choses ensemble, et les tests end-to-end testent tout. Je ne suis pas sûr des différences exactes.",
     },
+    "QCM — Complexité algorithmique": {
+    "excellent": "C) O(V+E)",
+    "good": "C) O(V+E)",
+    "average": "B) O(E)",
+    "weak": "D) O(V*E)",
+    },
+    "Définition courte — Overfitting": {
+        "excellent": "Le surapprentissage survient quand un modèle mémorise les données d'entraînement sans généraliser sur de nouvelles données. On peut l'éviter avec la régularisation L2 ou le dropout.",
+        "good": "L'overfitting c'est quand le modèle est trop adapté aux données d'entraînement. On utilise la régularisation pour l'éviter.",
+        "average": "C'est quand le modèle apprend trop bien. On peut utiliser plus de données.",
+        "weak": "L'overfitting c'est un problème dans les réseaux de neurones.",
+    },
 }
 
 # ─── API REST ────────────────────────────────────────────────────────

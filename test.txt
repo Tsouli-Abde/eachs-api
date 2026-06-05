@@ -1,1 +1,19 @@
 Le machine learning est une branche de l'intelligence artificielle. Il permet aux machines d'apprendre à partir de données sans être explicitement programmées.
+
+
+Apprentissage en ML
+
+Expliquez la différence entre l’apprentissage supervisé et l’apprentissage non supervisé, puis donnez un exemple d’algorithme représentatif pour chaque approche.
+
+BONNE :
+L’apprentissage supervisé consiste à entraîner un modèle à partir de données étiquetées, c’est-à-dire pour lesquelles la sortie attendue est connue. L’objectif est d’apprendre une relation entre les entrées et les sorties afin de pouvoir faire des prédictions sur de nouvelles données. Un algorithme représentatif est la régression linéaire (ou les arbres de décision).
+
+L’apprentissage non supervisé, quant à lui, utilise des données non étiquetées. Le but est de découvrir des structures, des regroupements ou des relations cachées dans les données sans connaître à l’avance les résultats attendus. Un algorithme représentatif est le k-means, utilisé pour le clustering.
+
+Par exemple, prédire le prix d’une maison à partir de ses caractéristiques relève de l’apprentissage supervisé, tandis que regrouper des clients selon leurs comportements d’achat relève de l’apprentissage non supervisé.
+
+
+
+
+MV : 
+L’apprentissage supervisé et l’apprentissage non supervisé sont deux méthodes d’intelligence artificielle. Le premier sert à entraîner un ordinateur et le second à analyser des données. Un algorithme supervisé est Python et un algorithme non supervisé est le deep learning.

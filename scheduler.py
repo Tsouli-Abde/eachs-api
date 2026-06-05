@@ -17,7 +17,7 @@ MOODLE_TOKEN = os.environ.get("MOODLE_TOKEN")
 MOODLE_ADMIN_USER = os.environ.get("MOODLE_ADMIN_USER", "admin")
 MOODLE_ADMIN_PASSWORD = os.environ.get("MOODLE_ADMIN_PASSWORD", "Admin1234!")
 EACHS_URL = os.environ.get("EACHS_URL", "http://localhost:8000")
-CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 10))
+CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 30))
 AI_BACKEND = os.environ.get("AI_BACKEND", "local")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 

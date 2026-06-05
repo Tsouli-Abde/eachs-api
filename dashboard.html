@@ -4,240 +4,338 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EACHS — Tableau de bord</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-[data-theme="light"]{--white:#ffffff;--off:#f7f6f3;--surface:#f0efe9;--border:#e2e0d8;--border-strong:#c8c5bb;--text:#1a1916;--text-2:#5a5850;--text-3:#9a9890;--green:#1a6b4a;--green-bg:#eaf4ee;--amber:#8a5200;--amber-bg:#fdf3e1;--red:#a12020;--red-bg:#faeaea;--blue:#1a4a8a;--blue-bg:#e8f0fb;--purple:#5a3a9a;--purple-bg:#f0ecfb;--orange:#b54800;--orange-bg:#fff0e6}
-[data-theme="dark"]{--white:#16150f;--off:#1c1b14;--surface:#232218;--border:#2e2d22;--border-strong:#3e3d30;--text:#f0ede4;--text-2:#a09d90;--text-3:#6a6860;--green:#5ecb94;--green-bg:#0d2a1c;--amber:#f0b040;--amber-bg:#2a1e08;--red:#f07070;--red-bg:#2a0f0f;--blue:#6aabf0;--blue-bg:#0d1c30;--purple:#b090f0;--purple-bg:#1a1230;--orange:#ff8c42;--orange-bg:#2a1500}
-body{font-family:'IBM Plex Sans',sans-serif;background:var(--off);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;transition:background .2s,color .2s}
-.layout{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
-.sidebar{background:var(--white);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;transition:background .2s,border-color .2s}
-.sidebar-header{padding:22px 18px 18px;border-bottom:1px solid var(--border)}
-.logo{font-size:15px;font-weight:600;letter-spacing:-.2px;color:var(--text);margin-bottom:2px}
-.logo-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;line-height:1.4}
-.sidebar-nav{padding:10px 8px;flex:1;overflow-y:auto}
-.nav-section{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;padding:12px 12px 6px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-2);transition:background .1s,color .1s;border:none;background:none;width:100%;text-align:left}
-.nav-item:hover{background:var(--surface);color:var(--text)}
-.nav-item.active{background:var(--green-bg);color:var(--green);font-weight:500}
-.nav-icon{width:15px;height:15px;flex-shrink:0;opacity:.65}
+
+[data-theme="light"]{
+  --violet:#6C5CE7; --violet-d:#5A48D6; --violet-bg:#efeafe;
+  --coral:#E84B57; --coral-bg:#fceaeb;
+  --amber:#D98613; --amber-bg:#fbf0db;
+  --emerald:#0E9E72; --emerald-bg:#e1f3ec;
+  --teal:#1789A0; --teal-bg:#e0f0f3;
+  --ink:#1b1a26; --muted:#67657a; --faint:#a1a0b3;
+  --bg:#f2f1f8; --card:#ffffff; --card-2:#f8f7fc;
+  --border:#ebeaf4; --border-2:#e1dfee;
+  --shadow:0 1px 2px rgba(27,26,38,.04),0 12px 28px -18px rgba(27,26,38,.18);
+  --shadow-lg:0 24px 60px -30px rgba(76,60,170,.45);
+}
+[data-theme="dark"]{
+  --violet:#8b7bf0; --violet-d:#a99bf5; --violet-bg:#241f3d;
+  --coral:#ff7a82; --coral-bg:#341a1d;
+  --amber:#eba53f; --amber-bg:#332512;
+  --emerald:#37c79b; --emerald-bg:#0f2c22;
+  --teal:#3eb6cb; --teal-bg:#0e2a30;
+  --ink:#f1eff8; --muted:#a09eb6; --faint:#6b6981;
+  --bg:#131220; --card:#1c1a2a; --card-2:#221f31;
+  --border:#2a2839; --border-2:#363349;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 36px -22px rgba(0,0,0,.7);
+  --shadow-lg:0 24px 60px -28px rgba(0,0,0,.7);
+}
+
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+.mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:6px;border:3px solid var(--bg)}
+::selection{background:var(--violet-bg);color:var(--violet-d)}
+
+.layout{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* ───────── Sidebar ───────── */
+.sidebar{background:var(--card);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 14px;transition:background .25s,border-color .25s}
+.sb-logo{display:flex;align-items:center;gap:12px;padding:6px 8px 20px}
+.sb-mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--violet),#8b7bf0);box-shadow:0 8px 18px -8px var(--violet)}
+.sb-name{font-weight:800;font-size:16px;letter-spacing:-.3px;line-height:1;color:var(--ink)}
+.sb-name small{display:block;font-weight:500;font-size:9px;letter-spacing:.05em;text-transform:uppercase;margin-top:5px;color:var(--faint);line-height:1.4}
+.sb-sec{font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:16px 12px 7px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);border:none;background:none;width:100%;text-align:left;transition:background .12s,color .12s;font-family:inherit}
+.nav-item .nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.8}
+.nav-item:hover{background:var(--card-2);color:var(--ink)}
+.nav-item.active{background:var(--violet);color:#fff;box-shadow:0 10px 20px -10px var(--violet)}
 .nav-item.active .nav-icon{opacity:1}
-.sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.status-row{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-3)}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
-.theme-btn{background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text-2);padding:4px 8px;cursor:pointer;font-size:11px;transition:all .1s}
-.theme-btn:hover{background:var(--border);color:var(--text)}
-.main{padding:28px 32px;min-width:0}
-.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border)}
-.page-title{font-size:19px;font-weight:600;letter-spacing:-.3px}
-.page-sub{font-size:13px;color:var(--text-2);margin-top:2px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:6px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-2);transition:all .1s;font-weight:400}
-.btn:hover{background:var(--surface);border-color:var(--border-strong);color:var(--text)}
-.btn-primary{background:var(--text);color:var(--white);border-color:var(--text)}
-.btn-primary:hover{opacity:.85}
-.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
-.metric{background:var(--white);padding:16px 18px;transition:background .2s}
-.metric-label{font-size:11px;color:var(--text-3);margin-bottom:5px}
-.metric-value{font-size:24px;font-weight:300;letter-spacing:-.5px;line-height:1;font-family:'IBM Plex Mono',monospace}
-.metric-sub{font-size:10px;color:var(--text-3);margin-top:3px}
-.metric-value.green{color:var(--green)}
-.metric-value.amber{color:var(--amber)}
-.metric-value.blue{color:var(--blue)}
-.metric-value.orange{color:var(--orange)}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:background .2s,border-color .2s}
-.card-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:11px;font-weight:500;color:var(--text-2);text-transform:uppercase;letter-spacing:.07em}
-.card-body{padding:18px}
-.kappa-big{font-family:'IBM Plex Mono',monospace;font-size:48px;font-weight:300;letter-spacing:-2px;line-height:1;margin:4px 0 8px}
-.task-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.task-cell{padding:11px 13px;background:var(--off);border-radius:7px;border:1px solid var(--border)}
-.task-cell-label{font-size:11px;color:var(--text-3);margin-bottom:3px}
-.task-cell-score{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:400}
-.task-cell-count{font-size:10px;color:var(--text-3);margin-top:1px}
+.nav-item .count-badge{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:20px;background:var(--coral);color:#fff;min-width:22px;text-align:center}
+.nav-item.active .count-badge{background:rgba(255,255,255,.22)}
+.sb-foot{margin-top:auto;padding:14px;border-radius:14px;background:linear-gradient(155deg,var(--violet),#7d6cee);color:#fff;box-shadow:var(--shadow-lg)}
+.sb-foot .ttl{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.sb-foot .desc{font-size:11px;opacity:.85;line-height:1.5;margin-top:5px}
+.sb-status{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:0 4px}
+.status-row{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--faint);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);flex-shrink:0;box-shadow:0 0 0 3px var(--emerald-bg)}
+.theme-btn{background:var(--card-2);border:1px solid var(--border);border-radius:9px;color:var(--muted);padding:6px 9px;cursor:pointer;font-size:13px;transition:all .12s;display:grid;place-items:center}
+.theme-btn:hover{background:var(--border);color:var(--ink)}
+.theme-btn svg{width:15px;height:15px}
 
-/* Devoirs layout */
-.devoirs-layout{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 130px);border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--white)}
-.devoirs-list{border-right:1px solid var(--border);overflow-y:auto;background:var(--white)}
-.devoirs-list-header{padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;background:var(--off);position:sticky;top:0;z-index:1}
-.course-group{border-bottom:1px solid var(--border)}
-.course-label{padding:10px 16px 6px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;background:var(--off)}
-.devoir-item{padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.devoir-item:last-child{border-bottom:none}
-.devoir-item:hover{background:var(--surface)}
-.devoir-item.active{background:var(--green-bg);border-left:3px solid var(--green)}
-.devoir-item.active .devoir-name{color:var(--green);font-weight:500}
-.devoir-name{font-size:13px;color:var(--text);line-height:1.3;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.devoir-meta{font-size:11px;color:var(--text-3);margin-top:2px}
-.badge-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;font-size:10px;font-weight:500;flex-shrink:0}
-.badge-pending{background:var(--blue-bg);color:var(--blue)}
-.badge-done{background:var(--surface);color:var(--text-3)}
-.badge-manual{background:var(--orange-bg);color:var(--orange)}
+/* ───────── Main ───────── */
+.main{padding:26px 30px 40px;min-width:0}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-.6px;line-height:1.05}
+.page-sub{font-size:13.5px;color:var(--muted);margin-top:7px;font-weight:500}
+.header-actions{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border-2);background:var(--card);color:var(--muted);transition:all .12s}
+.btn:hover{background:var(--card-2);border-color:var(--faint);color:var(--ink)}
+.btn svg{width:14px;height:14px}
+.btn-primary{background:var(--violet);color:#fff;border-color:var(--violet);box-shadow:0 10px 22px -12px var(--violet)}
+.btn-primary:hover{background:var(--violet-d);color:#fff;border-color:var(--violet-d)}
+.avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--violet),#8b7bf0);flex-shrink:0}
+.demo-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;background:var(--amber-bg);color:var(--amber)}
 
-/* Panel étudiants */
-.etudiants-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--off)}
-.etudiants-panel-header{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.etudiants-panel-title{font-size:14px;font-weight:500}
-.etudiants-panel-sub{font-size:12px;color:var(--text-3);margin-top:1px}
-.etudiants-list{flex:1;overflow-y:auto;padding:12px}
-.etudiant-card{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;transition:border-color .15s}
-.etudiant-card:hover{border-color:var(--border-strong)}
-.etudiant-card.needs-action{border-left:3px solid var(--blue)}
-.etudiant-card.manual-correction{border-left:3px solid var(--orange)}
-.etudiant-card-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
-.etudiant-info{flex:1;min-width:0}
-.etudiant-name{font-size:13px;font-weight:500;color:var(--text)}
-.etudiant-meta{font-size:11px;color:var(--text-3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
-.etudiant-score{text-align:right;flex-shrink:0}
-.score-big{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:400;line-height:1}
-.etudiant-card-body{padding:0 14px 14px;display:none}
-.etudiant-card-body.open{display:block}
-.section-label{font-size:10px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;margin-top:12px}
-.content-box{background:var(--off);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--text-2);line-height:1.6;max-height:120px;overflow-y:auto}
-.feedback-box{background:var(--amber-bg);border:1px solid rgba(138,82,0,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--amber);line-height:1.6;max-height:100px;overflow-y:auto}
-.decision-box{padding:10px 12px;border-radius:6px;font-size:12px;line-height:1.5;margin-top:12px}
-.decision-box.validated{background:var(--green-bg);border:1px solid rgba(26,107,74,.2);color:var(--green)}
-.decision-box.modified{background:var(--amber-bg);border:1px solid rgba(138,82,0,.2);color:var(--amber)}
-.decision-box.rejected{background:var(--orange-bg);border:1px solid rgba(181,72,0,.2);color:var(--orange)}
-.action-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
-.act-btn{padding:6px 14px;border-radius:5px;font-size:12px;cursor:pointer;border:1px solid;font-family:'IBM Plex Sans',sans-serif;transition:all .1s;background:transparent;font-weight:400}
-.act-btn-ok{border-color:var(--green);color:var(--green);background:var(--green-bg)}
-.act-btn-ok:hover{opacity:.75}
-.act-btn-mod{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
-.act-btn-mod:hover{opacity:.75}
-.act-btn-no{border-color:var(--orange);color:var(--orange);background:var(--orange-bg)}
-.act-btn-no:hover{opacity:.75}
-.score-bar-wrap{display:flex;align-items:center;gap:8px;margin-top:8px}
-.bar-bg{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.bar-fill{height:100%;border-radius:2px}
+/* ───────── KPI tiles ───────── */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.kpi{border-radius:18px;padding:18px 19px;position:relative;overflow:hidden;transition:transform .15s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.kpi-label{font-size:12.5px;font-weight:600;color:var(--muted)}
+.kpi-chip{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--card);flex-shrink:0}
+.kpi-chip svg{width:18px;height:18px}
+.kpi-value{font-size:32px;font-weight:800;letter-spacing:-1.2px;margin-top:12px;line-height:1;font-family:'JetBrains Mono',monospace}
+.kpi-foot{font-size:11.5px;color:var(--muted);margin-top:8px;font-weight:500;display:flex;align-items:center;gap:5px}
+.kpi.violet{background:var(--violet-bg)} .kpi.violet .kpi-value,.kpi.violet .kpi-chip{color:var(--violet)}
+.kpi.coral{background:var(--coral-bg)} .kpi.coral .kpi-value,.kpi.coral .kpi-chip{color:var(--coral)}
+.kpi.emerald{background:var(--emerald-bg)} .kpi.emerald .kpi-value,.kpi.emerald .kpi-chip{color:var(--emerald)}
+.kpi.amber{background:var(--amber-bg)} .kpi.amber .kpi-value,.kpi.amber .kpi-chip{color:var(--amber)}
 
-/* Tags */
-.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;white-space:nowrap}
-.tag-pending{background:var(--blue-bg);color:var(--blue)}
-.tag-validated{background:var(--green-bg);color:var(--green)}
+/* ───────── Cards / grids ───────── */
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:1.45fr 1fr}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-2eq{grid-template-columns:1fr 1fr}
+.mt16{margin-top:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);transition:background .25s,border-color .25s}
+.card-pad{padding:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.card-title{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.card-meta{font-size:12px;color:var(--faint);font-weight:600}
+.legend{display:flex;gap:18px;margin-top:10px;font-size:11.5px;font-weight:600;color:var(--muted);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* donut feature */
+.donut-card{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+.kappa-interp{font-size:12.5px;color:var(--muted);font-weight:600;max-width:240px;line-height:1.5}
+
+/* task type mini cards */
+.task-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+.task-cell{background:var(--card-2);border:1px solid var(--border);border-radius:14px;padding:15px 16px}
+.task-cell .tc-label{font-size:12px;font-weight:600;color:var(--muted)}
+.task-cell .tc-score{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-1px;margin:9px 0}
+.task-cell .tc-count{font-size:11px;color:var(--faint);font-weight:500;margin-top:8px}
+.barline{height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.barline > div{height:100%;border-radius:4px}
+
+/* ───────── Devoirs layout ───────── */
+.devoirs-layout{display:grid;grid-template-columns:330px 1fr;height:calc(100vh - 150px);border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+.devoirs-list{border-right:1px solid var(--border);overflow-y:auto;background:var(--card)}
+.devoirs-list-header{padding:15px 18px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;background:var(--card);position:sticky;top:0;z-index:2}
+.course-group{padding:4px 10px 8px}
+.course-label{padding:14px 10px 8px;font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:8px}
+.course-label::before{content:"";width:8px;height:8px;border-radius:3px;background:var(--violet);flex-shrink:0}
+.devoir-item{padding:12px 13px;cursor:pointer;border-radius:12px;transition:background .12s;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:3px}
+.devoir-item:hover{background:var(--card-2)}
+.devoir-item.active{background:var(--violet-bg)}
+.devoir-item.active .devoir-name{color:var(--violet-d)}
+.devoir-name{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.devoir-meta{font-size:11.5px;color:var(--faint);margin-top:3px;font-weight:500}
+.badge-count{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 9px;border-radius:20px;font-size:10.5px;font-weight:700;flex-shrink:0;white-space:nowrap}
+.badge-pending{background:var(--coral-bg);color:var(--coral)}
+.badge-manual{background:var(--amber-bg);color:var(--amber)}
+.badge-done{background:var(--emerald-bg);color:var(--emerald)}
+
+.etudiants-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.etudiants-panel-header{padding:17px 22px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.etudiants-panel-title{font-size:16px;font-weight:700;letter-spacing:-.2px}
+.etudiants-panel-sub{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:500}
+.etudiants-list{flex:1;overflow-y:auto;padding:16px 18px}
+.etudiant-card{background:var(--card);border:1px solid var(--border);border-radius:15px;margin-bottom:12px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.etudiant-card:hover{box-shadow:var(--shadow)}
+.etudiant-card.needs-action{border-color:color-mix(in srgb,var(--coral) 35%,transparent)}
+.etudiant-card.manual-correction{border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.etudiant-strip{height:4px;width:100%}
+.etudiant-card-head{padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer}
+.etudiant-ident{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.etu-ava{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:12.5px;flex-shrink:0;background:var(--violet-bg);color:var(--violet-d)}
+.etudiant-name{font-size:14px;font-weight:700;color:var(--ink)}
+.etudiant-meta{font-size:11.5px;color:var(--faint);margin-top:3px;font-weight:500;display:flex;align-items:center;gap:7px}
+.etudiant-score{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:14px}
+.score-big{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;line-height:1}
+.score-big small{font-size:12px;color:var(--faint);font-weight:500}
+.chev{width:16px;height:16px;color:var(--faint);transition:transform .2s}
+.etudiant-card.open .chev{transform:rotate(180deg)}
+.etudiant-card-body{padding:0 17px 17px;display:none}
+.etudiant-card.open .etudiant-card-body{display:block;animation:fadein .2s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.section-label{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 7px}
+.content-box{background:var(--card-2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.65;max-height:130px;overflow-y:auto}
+.feedback-box{background:var(--violet-bg);border:1px solid color-mix(in srgb,var(--violet) 18%,transparent);border-radius:11px;padding:12px 14px;font-size:12.5px;color:var(--violet-d);line-height:1.65;max-height:120px;overflow-y:auto}
+.score-bar-wrap{display:flex;align-items:center;gap:11px;margin-top:10px}
+.score-bar-wrap .lbl{font-size:11.5px;color:var(--faint);min-width:54px;font-weight:600}
+.bar-bg{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.decision-box{padding:12px 14px;border-radius:12px;font-size:12.5px;line-height:1.55;margin-top:14px;font-weight:500}
+.decision-box small{opacity:.75;font-weight:500}
+.decision-box.validated{background:var(--emerald-bg);color:var(--emerald)}
+.decision-box.modified{background:var(--amber-bg);color:var(--amber)}
+.decision-box.rejected{background:var(--coral-bg);color:var(--coral)}
+.action-row{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+.act-btn{padding:9px 15px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid;font-family:inherit;transition:all .12s;flex:1;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.act-btn-ok{border-color:transparent;color:#fff;background:var(--emerald)}
+.act-btn-mod{border-color:var(--border-2);color:var(--amber);background:var(--card)}
+.act-btn-no{border-color:var(--border-2);color:var(--coral);background:var(--card)}
+.act-btn:hover{filter:brightness(.96);transform:translateY(-1px)}
+.act-btn-mod:hover,.act-btn-no:hover{background:var(--card-2)}
+
+/* ───────── Tags ───────── */
+.tag{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag.nodot::before{display:none}
+.tag-pending{background:var(--coral-bg);color:var(--coral)}
+.tag-validated{background:var(--emerald-bg);color:var(--emerald)}
 .tag-modified{background:var(--amber-bg);color:var(--amber)}
-.tag-rejected{background:var(--orange-bg);color:var(--orange)}
-.tag-auto{background:var(--surface);color:var(--text-3)}
-.tag-qcm{background:var(--green-bg);color:var(--green)}
-.tag-short{background:var(--blue-bg);color:var(--blue)}
+.tag-rejected{background:var(--coral-bg);color:var(--coral)}
+.tag-auto{background:var(--card-2);color:var(--faint)}
+.tag-qcm{background:var(--emerald-bg);color:var(--emerald)}
+.tag-short{background:var(--teal-bg);color:var(--teal)}
 .tag-essay{background:var(--amber-bg);color:var(--amber)}
-.tag-formal{background:var(--purple-bg);color:var(--purple)}
+.tag-formal{background:var(--violet-bg);color:var(--violet-d)}
 
-/* Table */
-.table-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.table-toolbar{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead{background:var(--off)}
-th{padding:9px 12px;text-align:left;font-size:10px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--off)}
-.mono{font-family:'IBM Plex Mono',monospace;font-size:11px}
-.truncate{max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.filter-bar{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
-.filter-pill{padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:var(--white);color:var(--text-2);transition:all .1s;font-family:'IBM Plex Sans',sans-serif}
-.filter-pill:hover{border-color:var(--border-strong);color:var(--text)}
-.filter-pill.active{background:var(--text);color:var(--white);border-color:var(--text)}
+/* ───────── Table ───────── */
+.filter-bar{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.filter-pill{padding:7px 15px;border-radius:20px;border:1px solid var(--border-2);font-size:12.5px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);transition:all .12s;font-family:inherit}
+.filter-pill:hover{border-color:var(--faint);color:var(--ink)}
+.filter-pill.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.table-toolbar{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{padding:11px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--card-2)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--ink);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .1s}
+tbody tr:hover td{background:var(--card-2)}
+.truncate{max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-weight:600}
+.cell-muted{color:var(--faint);font-weight:500}
 
-/* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.modal{background:var(--white);border:1px solid var(--border);border-radius:12px;width:460px;max-width:94vw;overflow:hidden}
-.modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--border)}
-.modal-head-title{font-size:15px;font-weight:600}
-.modal-head-sub{font-size:11px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:2px}
-.modal-body{padding:18px 22px}
-.field-label{font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
-.score-input{width:100%;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:16px;font-family:'IBM Plex Mono',monospace;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:14px}
-.score-input:focus{border-color:var(--border-strong)}
-.comment-input{width:100%;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;color:var(--text);outline:none;transition:border-color .15s;resize:vertical;min-height:70px}
-.comment-input:focus{border-color:var(--border-strong)}
-.modal-foot{padding:12px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--off)}
-.modal-info{background:var(--amber-bg);border:1px solid rgba(138,82,0,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--amber);margin-bottom:14px;line-height:1.5}
-.modal-info.danger{background:var(--orange-bg);border-color:rgba(181,72,0,.2);color:var(--orange)}
+/* analytics perf table */
+.perf-num{font-family:'JetBrains Mono',monospace;font-weight:600}
 
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:var(--white);padding:8px 18px;border-radius:6px;font-size:13px;z-index:100;opacity:0;transition:all .25s;white-space:nowrap}
+/* ───────── Modal ───────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(20,18,32,.5);backdrop-filter:blur(3px);z-index:60;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex;animation:fadein .15s}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:480px;max-width:100%;overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.5)}
+.modal-head{padding:22px 24px 16px}
+.modal-head-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.modal-head-sub{font-size:12px;color:var(--faint);font-family:'JetBrains Mono',monospace;margin-top:5px}
+.modal-body{padding:0 24px 4px}
+.field-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;display:block}
+.score-input{width:100%;background:var(--card-2);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:18px;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);outline:none;transition:border-color .15s}
+.score-input:focus{border-color:var(--violet)}
+.comment-input{width:100%;background:var(--card-2);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s;resize:vertical;min-height:80px;line-height:1.6}
+.comment-input:focus{border-color:var(--violet)}
+.modal-info{display:flex;gap:10px;background:var(--violet-bg);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--violet-d);line-height:1.55;font-weight:500;margin-top:4px}
+.modal-info.danger{background:var(--coral-bg);color:var(--coral)}
+.modal-info svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.modal-foot{padding:18px 24px;display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:100;opacity:0;transition:all .3s cubic-bezier(.2,.8,.2,1);white-space:nowrap;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);display:flex;align-items:center;gap:9px}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.loading-state{text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px;font-family:'IBM Plex Mono',monospace}
-.empty-state{text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px}
-.count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 4px;border-radius:9px;font-size:10px;font-weight:500;background:var(--blue-bg);color:var(--blue);margin-left:5px}
+.loading-state,.empty-state{text-align:center;padding:48px 24px;color:var(--faint);font-size:13px;font-weight:500}
+.empty-big{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--faint)}
+.empty-big .ic{width:56px;height:56px;border-radius:16px;background:var(--card-2);display:grid;place-items:center;color:var(--violet)}
+.empty-big .ic svg{width:26px;height:26px}
+.empty-big .et{font-size:15px;font-weight:700;color:var(--muted)}
+.empty-big .es{font-size:13px}
+
+.page{animation:pagein .25s ease}
+@keyframes pagein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
 <div class="layout">
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">EACHS</div>
-      <div class="logo-sub">Évaluation Assistée<br>sous Contrôle Humain</div>
+    <div class="sb-logo">
+      <div class="sb-mark">E</div>
+      <div class="sb-name">EACHS<small>Évaluation Assistée<br>sous Contrôle Humain</small></div>
     </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section">Navigation</div>
-      <button class="nav-item active" onclick="showPage('dashboard')">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    <nav style="flex:0">
+      <div class="sb-sec">Navigation</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.6"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.6"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.6"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.6"/></svg>
         Vue d'ensemble
       </button>
-      <button class="nav-item" onclick="showPage('devoirs')">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h4"/></svg>
+      <button class="nav-item" onclick="showPage('devoirs',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 1.5h6l3 3v10H4z"/><path d="M9.5 1.5V5h3.5M6 8.5h4M6 11h3"/></svg>
         Devoirs
         <span class="count-badge" id="pending-count">0</span>
       </button>
-      <button class="nav-item" onclick="showPage('analytics')">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V8l3-3 3 3 3-4 3-2"/></svg>
+      <button class="nav-item" onclick="showPage('analytics',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 14V2M2 14h12M5 11l3-4 2 2 4-6"/></svg>
         Analytiques
       </button>
-      <button class="nav-item" onclick="showPage('logs')">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      <button class="nav-item" onclick="showPage('logs',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5h12M2 8h9M2 12.5h11"/></svg>
         Journal d'audit
       </button>
-      <div class="nav-section" style="margin-top:6px">Outils</div>
+      <div class="sb-sec">Outils</div>
       <button class="nav-item" onclick="window.open('/docs','_blank')">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L1 4v5c0 4 3 6 7 7 4-1 7-3 7-7V4L8 1z"/></svg>
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5L2.5 4v4c0 3.5 2.5 5.5 5.5 6.5 3-1 5.5-3 5.5-6.5V4z"/><path d="M5.8 8l1.6 1.6L10.4 6.5"/></svg>
         API Docs
       </button>
     </nav>
-    <div class="sidebar-footer">
-      <div class="status-row"><div class="dot"></div><span id="footer-time">—</span></div>
-      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">◑ Sombre</button>
+    <div class="sb-foot">
+      <div class="ttl"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 1.5L2.5 4v4c0 3.5 2.5 5.5 5.5 6.5 3-1 5.5-3 5.5-6.5V4z"/><path d="M5.8 8l1.6 1.6L10.4 6.5"/></svg>Conforme AI Act</div>
+      <div class="desc">Traçabilité complète des décisions — articles 12 &amp; 13.</div>
+    </div>
+    <div class="sb-status">
+      <div class="status-row"><span class="dot"></span><span id="footer-time">—</span></div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer de thème"></button>
     </div>
   </aside>
 
   <main class="main">
 
-    <!-- PAGE: Dashboard -->
-    <div id="page-dashboard">
+    <!-- ════ Vue d'ensemble ════ -->
+    <div id="page-dashboard" class="page">
       <div class="page-header">
-        <div><div class="page-title">Vue d'ensemble</div><div class="page-sub">Supervision des évaluations assistées par IA</div></div>
-        <button class="btn" onclick="loadAll()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button>
+        <div>
+          <div class="page-title" id="dash-greeting">Vue d'ensemble</div>
+          <div class="page-sub" id="dash-sub">Supervision des évaluations assistées par IA</div>
+        </div>
+        <div class="header-actions">
+          <span class="demo-pill" id="demo-pill" style="display:none"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>Données de démonstration</span>
+          <button class="btn" onclick="exportCsv()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5v8M5 6.5L8 9.5l3-3M2.5 11.5v2a1 1 0 001 1h9a1 1 0 001-1v-2"/></svg>Exporter</button>
+          <button class="btn btn-primary" onclick="loadAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button>
+          <div class="avatar" id="avatar">PL</div>
+        </div>
       </div>
-      <div class="metrics">
-        <div class="metric"><div class="metric-label">Total évaluations</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">toutes tâches</div></div>
-        <div class="metric"><div class="metric-label">En attente</div><div class="metric-value blue" id="m-pending">—</div><div class="metric-sub">à réviser</div></div>
-        <div class="metric"><div class="metric-label">Taux modification</div><div class="metric-value amber" id="m-modrate">—</div><div class="metric-sub">humain ≠ IA</div></div>
-        <div class="metric"><div class="metric-label">Validées</div><div class="metric-value green" id="m-validated">—</div><div class="metric-sub">sans modification</div></div>
-        <div class="metric"><div class="metric-label">Accord QWK</div><div class="metric-value" id="m-kappa">—</div><div class="metric-sub">IA / Humain</div></div>
-      </div>
-      <div class="two-col">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Kappa de Cohen pondéré</span></div>
-          <div class="card-body">
-            <div style="font-size:11px;color:var(--text-3);margin-bottom:2px">Quadratic Weighted Kappa</div>
-            <div class="kappa-big" id="kappa-big">—</div>
-            <div style="font-size:12px;color:var(--text-2);line-height:1.5" id="kappa-interp">—</div>
-            <div style="margin-top:10px;font-size:11px;color:var(--text-3)" id="kappa-n"></div>
+      <div class="kpis" id="kpi-row"></div>
+      <div class="grid g-2">
+        <div class="card card-pad">
+          <div class="card-head"><span class="card-title">Concordance IA / Humain dans le temps</span><span class="card-meta">moyenne glissante</span></div>
+          <div id="trend-chart" style="margin-top:12px"></div>
+          <div class="legend">
+            <span><i style="background:var(--violet)"></i>Concordance des scores</span>
+            <span><i style="background:var(--emerald)"></i>Taux de validation</span>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Score moyen par type</span></div>
-          <div class="card-body"><div class="task-grid" id="task-grid-dash"></div></div>
+        <div class="card card-pad donut-card">
+          <div class="card-head" style="width:100%;margin-bottom:8px"><span class="card-title">Accord QWK</span><span class="card-meta" id="kappa-grade">—</span></div>
+          <div id="kappa-donut"></div>
+          <div class="kappa-interp" id="kappa-interp" style="margin-top:10px">—</div>
+          <div class="card-meta" id="kappa-n" style="margin-top:6px"></div>
         </div>
+      </div>
+      <div class="card card-pad mt16">
+        <div class="card-head"><span class="card-title">Score moyen par type de tâche</span><span class="card-meta">moyenne des scores IA</span></div>
+        <div class="task-grid" id="task-grid-dash"></div>
       </div>
     </div>
 
-    <!-- PAGE: Devoirs -->
-    <div id="page-devoirs" style="display:none">
+    <!-- ════ Devoirs ════ -->
+    <div id="page-devoirs" class="page" style="display:none">
       <div class="page-header">
-        <div><div class="page-title">Devoirs</div><div class="page-sub">Sélectionnez un devoir pour réviser les copies</div></div>
-        <button class="btn" onclick="loadAll()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button>
+        <div><div class="page-title">Devoirs</div><div class="page-sub">Sélectionnez un devoir pour réviser les copies évaluées</div></div>
+        <div class="header-actions"><button class="btn btn-primary" onclick="loadAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button></div>
       </div>
       <div class="devoirs-layout">
         <div class="devoirs-list">
@@ -245,41 +343,45 @@ tbody tr:hover td{background:var(--off)}
           <div id="devoirs-list-content"><div class="loading-state">Chargement…</div></div>
         </div>
         <div class="etudiants-panel" id="etudiants-panel">
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-3);font-size:13px;gap:8px">
-            <div style="font-size:28px;opacity:.3">←</div>
-            <div>Sélectionnez un devoir</div>
+          <div class="empty-big">
+            <div class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1.5h6l3 3v10H4z"/><path d="M9.5 1.5V5h3.5M6 8.5h4M6 11h3"/></svg></div>
+            <div class="et">Sélectionnez un devoir</div>
+            <div class="es">Choisissez un devoir à gauche pour voir les copies à réviser.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PAGE: Analytics -->
-    <div id="page-analytics" style="display:none">
+    <!-- ════ Analytiques ════ -->
+    <div id="page-analytics" class="page" style="display:none">
       <div class="page-header">
         <div><div class="page-title">Analytiques</div><div class="page-sub">Métriques de performance du système EACHS</div></div>
+        <div class="header-actions"><button class="btn" onclick="exportCsv()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5v8M5 6.5L8 9.5l3-3M2.5 11.5v2a1 1 0 001 1h9a1 1 0 001-1v-2"/></svg>Exporter</button></div>
       </div>
       <div id="analytics-content"><div class="loading-state">Chargement…</div></div>
     </div>
 
-    <!-- PAGE: Logs -->
-    <div id="page-logs" style="display:none">
+    <!-- ════ Journal d'audit ════ -->
+    <div id="page-logs" class="page" style="display:none">
       <div class="page-header">
         <div><div class="page-title">Journal d'audit</div><div class="page-sub">Traçabilité complète des décisions IA — AI Act art. 12 &amp; 13</div></div>
-        <button class="btn" onclick="loadAll()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button>
+        <div class="header-actions"><button class="btn" onclick="exportCsv()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5v8M5 6.5L8 9.5l3-3M2.5 11.5v2a1 1 0 001 1h9a1 1 0 001-1v-2"/></svg>Exporter CSV</button><button class="btn btn-primary" onclick="loadAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 8a6 6 0 1 0 1-3M2 2v3h3"/></svg>Actualiser</button></div>
       </div>
       <div class="filter-bar">
         <button class="filter-pill active" onclick="setFilter('all',this)">Tous</button>
         <button class="filter-pill" onclick="setFilter('pending',this)">En attente</button>
         <button class="filter-pill" onclick="setFilter('validated',this)">Validés</button>
         <button class="filter-pill" onclick="setFilter('modified',this)">Modifiés</button>
-        <button class="filter-pill" onclick="setFilter('rejected',this)">À corriger manuellement</button>
+        <button class="filter-pill" onclick="setFilter('rejected',this)">Correction manuelle</button>
         <button class="filter-pill" onclick="setFilter('auto',this)">Sans révision humaine</button>
       </div>
       <div class="table-card">
-        <table>
-          <thead><tr><th>Cours</th><th>Devoir</th><th>Étudiant</th><th>Type</th><th>Score IA</th><th>Statut</th><th>Score final</th><th>Décidé par</th><th>Backend IA</th><th>Date</th></tr></thead>
-          <tbody id="logs-tbody"><tr><td colspan="9" class="loading-state">Chargement…</td></tr></tbody>
-        </table>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Cours</th><th>Devoir</th><th>Étudiant</th><th>Type</th><th>Score IA</th><th>Statut</th><th>Score final</th><th>Décidé par</th><th>Backend IA</th><th>Date</th></tr></thead>
+            <tbody id="logs-tbody"><tr><td colspan="10" class="loading-state">Chargement…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -294,10 +396,10 @@ tbody tr:hover td{background:var(--off)}
       <div class="modal-head-sub" id="mod-context"></div>
     </div>
     <div class="modal-body">
-      <div class="modal-info">Le score modifié sera écrit dans Moodle avec une mention indiquant que la note a été ajustée par l'enseignant.</div>
+      <div class="modal-info"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4M8 11h.01"/></svg>Le score modifié sera écrit dans Moodle avec une mention indiquant que la note a été ajustée par l'enseignant.</div>
       <label class="field-label">Nouveau score (sur <span id="mod-max-label">100</span>)</label>
       <input type="number" class="score-input" id="mod-score" min="0" step="0.5">
-      <label class="field-label">Commentaire pour l'étudiant <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+      <label class="field-label">Commentaire pour l'étudiant <span style="font-weight:500;text-transform:none;color:var(--faint)">(optionnel)</span></label>
       <textarea class="comment-input" id="mod-comment" placeholder="Ex : Bonne structure mais manque d'exemples concrets…"></textarea>
     </div>
     <div class="modal-foot">
@@ -315,373 +417,21 @@ tbody tr:hover td{background:var(--off)}
       <div class="modal-head-sub" id="reject-context"></div>
     </div>
     <div class="modal-body">
-      <div class="modal-info danger">L'évaluation IA sera rejetée. La note provisoire 0 sera affichée dans Moodle avec un message indiquant qu'une correction manuelle est en cours. La copie apparaîtra dans le dashboard comme "À corriger manuellement".</div>
-      <label class="field-label">Motif du rejet <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+      <div class="modal-info danger"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l6.5 11.5H1.5z"/><path d="M8 6.5v3M8 11.5h.01"/></svg>L'évaluation IA sera rejetée. La note provisoire 0 sera affichée dans Moodle avec un message indiquant qu'une correction manuelle est en cours. La copie apparaîtra comme « À corriger manuellement ».</div>
+      <label class="field-label">Motif du rejet <span style="font-weight:500;text-transform:none;color:var(--faint)">(optionnel)</span></label>
       <textarea class="comment-input" id="reject-comment" placeholder="Ex : Question formelle nécessitant une vérification manuelle…"></textarea>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="closeModals()">Annuler</button>
-      <button class="btn" style="background:var(--orange);color:white;border-color:var(--orange)" onclick="submitReject()">Confirmer le rejet</button>
+      <button class="btn" style="background:var(--coral);color:#fff;border-color:var(--coral)" onclick="submitReject()">Confirmer le rejet</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script>
-let allLogs = [];
-let currentFilter = 'all';
-let modLogId = null, modMax = 100;
-let rejectLogId = null;
-let selectedDevoirKey = null;
-
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('theme-btn').textContent = isDark ? '◑ Sombre' : '☀ Clair';
-}
-
-async function loadAll() {
-  try {
-    const [lr, sr, kr] = await Promise.all([fetch('/logs'), fetch('/stats'), fetch('/stats/kappa')]);
-    allLogs = await lr.json();
-    const stats = await sr.json();
-    const kappa = await kr.json();
-    renderDashboard(stats, kappa);
-    renderDevoirsList(allLogs);
-    renderAnalytics(stats, kappa);
-    renderLogs(allLogs);
-    const pending = allLogs.filter(l => l.requires_human_review && !l.human_decision).length;
-    document.getElementById('pending-count').textContent = pending;
-    document.getElementById('footer-time').textContent = new Date().toLocaleTimeString('fr-FR');
-    if (selectedDevoirKey) renderEtudiants(selectedDevoirKey);
-  } catch(e) { console.error(e); }
-}
-
-function renderDashboard(s, k) {
-  if (!s.message) {
-    const g = s.global;
-    document.getElementById('m-total').textContent = g.total_evaluations;
-    document.getElementById('m-pending').textContent = g.pending_review;
-    document.getElementById('m-modrate').textContent = g.modification_rate_pct !== null ? g.modification_rate_pct + '%' : '—';
-    document.getElementById('m-validated').textContent = g.validated;
-    const bt = s.by_task_type || {};
-    const types = ['qcm','short_answer','essay','formal'];
-    const labels = ['QCM','Réponse courte','Rédaction','Formel'];
-    const colors = ['var(--green)','var(--blue)','var(--amber)','var(--purple)'];
-    document.getElementById('task-grid-dash').innerHTML = types.map((t,i) => {
-      const d = bt[t];
-      return `<div class="task-cell"><div class="task-cell-label">${labels[i]}</div><div class="task-cell-score" style="color:${colors[i]}">${d?.avg_ai_score_pct!=null?d.avg_ai_score_pct+'%':'—'}</div><div class="task-cell-count">${d?.total_evaluations??0} éval.</div></div>`;
-    }).join('');
-  }
-  const el = document.getElementById('kappa-big');
-  if (k.message) { el.textContent = 'N/A'; document.getElementById('kappa-interp').textContent = k.message; document.getElementById('m-kappa').textContent = '—'; }
-  else {
-    const v = k.quadratic_weighted_kappa;
-    const c = v>=0.8?'var(--green)':v>=0.6?'var(--amber)':'var(--red)';
-    el.textContent = v.toFixed(3); el.style.color = c;
-    document.getElementById('kappa-interp').textContent = k.interpretation;
-    document.getElementById('kappa-n').textContent = k.n_evaluated + ' paires évaluées';
-    document.getElementById('m-kappa').textContent = v.toFixed(2);
-    document.getElementById('m-kappa').style.color = c;
-  }
-}
-
-function groupByDevoir(logs) {
-  const groups = {};
-  logs.forEach(l => {
-    const course = l.course_name || 'Cours inconnu';
-    const devoir = l.assignment_name || l.assignment_id;
-    const key = `${course}|||${devoir}|||${l.assignment_id}`;
-    if (!groups[key]) groups[key] = { course, devoir, assignment_id: l.assignment_id, logs: [] };
-    groups[key].logs.push(l);
-  });
-  return groups;
-}
-
-function renderDevoirsList(logs) {
-  const groups = groupByDevoir(logs);
-  const byCourse = {};
-  Object.entries(groups).forEach(([key, g]) => {
-    if (!byCourse[g.course]) byCourse[g.course] = [];
-    byCourse[g.course].push({ key, ...g });
-  });
-
-  let html = '';
-  Object.entries(byCourse).forEach(([course, devoirs]) => {
-    html += `<div class="course-group"><div class="course-label">${course}</div>`;
-    devoirs.forEach(d => {
-      const pending = d.logs.filter(l => l.requires_human_review && !l.human_decision).length;
-      const manual = d.logs.filter(l => l.human_decision === 'rejected').length;
-      const total = d.logs.length;
-      const isActive = selectedDevoirKey === d.key;
-      let badge = '';
-      if (pending > 0) badge = `<span class="badge-count badge-pending">${pending} en attente</span>`;
-      else if (manual > 0) badge = `<span class="badge-count badge-manual">${manual} manuel</span>`;
-      else badge = `<span class="badge-count badge-done">${total} corrigé${total>1?'s':''}</span>`;
-      html += `<div class="devoir-item ${isActive?'active':''}" onclick="selectDevoir('${d.key.replace(/'/g,"\\'")}')">
-        <div style="min-width:0;flex:1">
-          <div class="devoir-name">${d.devoir}</div>
-          <div class="devoir-meta">${total} soumission${total>1?'s':''}</div>
-        </div>${badge}
-      </div>`;
-    });
-    html += '</div>';
-  });
-  if (!html) html = '<div class="loading-state">Aucun devoir</div>';
-  document.getElementById('devoirs-list-content').innerHTML = html;
-}
-
-function selectDevoir(key) {
-  selectedDevoirKey = key;
-  renderDevoirsList(allLogs);
-  renderEtudiants(key);
-}
-
-function renderEtudiants(key) {
-  const groups = groupByDevoir(allLogs);
-  const g = groups[key];
-  const panel = document.getElementById('etudiants-panel');
-  if (!g) return;
-
-  const pending = g.logs.filter(l => l.requires_human_review && !l.human_decision).length;
-  const manual = g.logs.filter(l => l.human_decision === 'rejected').length;
-
-  let html = `<div class="etudiants-panel-header">
-    <div>
-      <div class="etudiants-panel-title">${g.devoir}</div>
-      <div class="etudiants-panel-sub">${g.course} · ${g.logs.length} soumission${g.logs.length>1?'s':''} · ${pending} en attente${manual>0?' · '+manual+' à corriger manuellement':''}</div>
-    </div>
-  </div>
-  <div class="etudiants-list">`;
-
-  if (!g.logs.length) { html += '<div class="empty-state">Aucune soumission</div>'; }
-  else {
-    [...g.logs].reverse().forEach(l => {
-      const pct = l.max_score > 0 ? Math.round(l.proposed_score / l.max_score * 100) : 0;
-      const bc = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
-      const displayScore = l.human_final_score !== null ? l.human_final_score : l.proposed_score;
-      const displayPct = l.max_score > 0 ? Math.round(displayScore / l.max_score * 100) : 0;
-      const displayColor = displayPct >= 70 ? 'var(--green)' : displayPct >= 40 ? 'var(--amber)' : 'var(--red)';
-
-      let sBadge = 'tag-auto', sLabel = 'Automatique';
-      let cardClass = '';
-      if (l.human_decision === 'validated') { sBadge='tag-validated'; sLabel='Validé par l\'enseignant ✓'; }
-      else if (l.human_decision === 'modified') { sBadge='tag-modified'; sLabel='Score modifié par l\'enseignant'; }
-      else if (l.human_decision === 'rejected') { sBadge='tag-rejected'; sLabel='À corriger manuellement'; cardClass='manual-correction'; }
-      else if (l.requires_human_review) { sBadge='tag-pending'; sLabel='En attente de révision'; cardClass='needs-action'; }
-
-      const needsAct = l.requires_human_review && !l.human_decision;
-      const tLabel = {qcm:'QCM',short_answer:'Réponse courte',essay:'Rédaction',formal:'Exercice formel'}[l.task_type]||l.task_type;
-      const tBadge = {qcm:'tag-qcm',short_answer:'tag-short',essay:'tag-essay',formal:'tag-formal'}[l.task_type]||'';
-      const dt = new Date(l.timestamp).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});
-      const preview = (l.student_answer_preview || l.student_answer || '').substring(0,300);
-      const feedback = (l.feedback||'').substring(0,400);
-      const fb = feedback.replace(/`/g,'');
-      const context = `Étudiant ${l.student_id} — ${g.devoir}`;
-
-      let decisionBlock = '';
-      if (l.human_decision === 'validated') {
-        decisionBlock = `<div class="decision-box validated">✓ Validé par l'enseignant${l.human_comment ? ' — ' + l.human_comment : ''}<br><small style="opacity:.7">Score final : ${l.human_final_score}/${l.max_score} · ${new Date(l.reviewed_at).toLocaleDateString('fr-FR')}</small></div>`;
-      } else if (l.human_decision === 'modified') {
-        decisionBlock = `<div class="decision-box modified">✎ Score modifié : ${l.proposed_score} → ${l.human_final_score}/${l.max_score}${l.human_comment ? '<br>' + l.human_comment : ''}<br><small style="opacity:.7">${new Date(l.reviewed_at).toLocaleDateString('fr-FR')}</small></div>`;
-      } else if (l.human_decision === 'rejected') {
-        decisionBlock = `<div class="decision-box rejected">⚠ Correction manuelle requise${l.human_comment ? '<br>' + l.human_comment : ''}<br><small style="opacity:.7">Note provisoire 0 dans Moodle · ${new Date(l.reviewed_at).toLocaleDateString('fr-FR')}</small></div>`;
-      }
-
-      html += `<div class="etudiant-card ${cardClass}" id="card-${l.log_id}">
-        <div class="etudiant-card-head" onclick="toggleCard('${l.log_id}')">
-          <div class="etudiant-info">
-            <div class="etudiant-name">Étudiant ${l.student_id}</div>
-            <div class="etudiant-meta">${dt} · <span class="tag ${tBadge}" style="font-size:10px">${tLabel}</span></div>
-          </div>
-          <div class="etudiant-score">
-            <div class="score-big" style="color:${displayColor}">${displayScore}<span style="font-size:12px;color:var(--text-3)">/${l.max_score}</span></div>
-            <div style="margin-top:4px"><span class="tag ${sBadge}" style="font-size:10px">${sLabel}</span></div>
-          </div>
-        </div>
-        <div class="etudiant-card-body" id="body-${l.log_id}">
-          <div class="score-bar-wrap">
-            <div style="font-size:11px;color:var(--text-3);min-width:60px">Score IA</div>
-            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${bc}"></div></div>
-            <span class="mono" style="color:var(--text-3)">${l.proposed_score}/${l.max_score}</span>
-          </div>
-
-          <div class="section-label">Question posée</div>
-          <div class="content-box">${l.question||'—'}</div>
-
-          <div class="section-label">Réponse de l'étudiant</div>
-          <div class="content-box">${preview||'<em style="color:var(--text-3)">Soumission fichier — voir Moodle</em>'}</div>
-
-          <div class="section-label">Feedback proposé par l'IA</div>
-          <div class="feedback-box">${feedback||'—'}</div>
-
-          ${decisionBlock}
-
-          ${needsAct ? `<div class="action-row">
-            <button class="act-btn act-btn-ok" onclick="quickValidate('${l.log_id}',${l.proposed_score},${l.max_score},'${context.replace(/'/g,"\\'")}')">✓ Valider (${l.proposed_score}/${l.max_score})</button>
-            <button class="act-btn act-btn-mod" onclick="openMod('${l.log_id}',${l.proposed_score},${l.max_score},'${context.replace(/'/g,"\\'")}')">✎ Modifier le score</button>
-            <button class="act-btn act-btn-no" onclick="openReject('${l.log_id}','${context.replace(/'/g,"\\'")}')">✕ Rejeter — correction manuelle</button>
-          </div>` : ''}
-        </div>
-      </div>`;
-    });
-  }
-  html += '</div>';
-  panel.innerHTML = html;
-
-  // Auto-ouvrir les cartes en attente
-  g.logs.filter(l => l.requires_human_review && !l.human_decision).forEach(l => {
-    const body = document.getElementById('body-'+l.log_id);
-    if (body) body.classList.add('open');
-  });
-}
-
-function toggleCard(logId) {
-  const body = document.getElementById('body-'+logId);
-  if (body) body.classList.toggle('open');
-}
-
-function renderLogs(logs) {
-  const filtered = logs.filter(l => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'pending') return l.requires_human_review && !l.human_decision;
-    if (currentFilter === 'auto') return !l.requires_human_review;
-    return l.human_decision === currentFilter;
-  });
-  const tb = document.getElementById('logs-tbody');
-  if (!filtered.length) { tb.innerHTML = `<tr><td colspan="9" class="empty-state">Aucun enregistrement</td></tr>`; return; }
-  const tMap = {qcm:'tag-qcm',short_answer:'tag-short',essay:'tag-essay',formal:'tag-formal'};
-  const tLabel = {qcm:'QCM',short_answer:'Court',essay:'Rédaction',formal:'Formel'};
-  tb.innerHTML = [...filtered].reverse().map(l => {
-    let sBadge='tag-auto', sLabel='Auto (IA)';
-    if (l.human_decision==='validated'){sBadge='tag-validated';sLabel='Validé';}
-    else if (l.human_decision==='modified'){sBadge='tag-modified';sLabel='Modifié';}
-    else if (l.human_decision==='rejected'){sBadge='tag-rejected';sLabel='Rejeté';}
-    else if (l.requires_human_review){sBadge='tag-pending';sLabel='En attente';}
-    const dt = new Date(l.timestamp).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const final = l.human_final_score!==null?`<span class="mono">${l.human_final_score}/${l.max_score}</span>`:`<span style="color:var(--text-3)">—</span>`;
-    const decidedBy = l.human_decision ? 'Enseignant' : (l.requires_human_review ? '—' : 'IA auto');
-    const backend = l.backend || '—';
-const backendLabel = backend.includes('gemini') ? '☁ Gemini' : backend.includes('mistral') ? '⬡ Mistral' : backend;
-    return `<tr>
-      <td><span class="truncate">${l.course_name||'—'}</span></td>
-      <td><span class="truncate">${l.assignment_name||l.assignment_id}</span></td>
-      <td class="mono">${l.student_id}</td>
-      <td><span class="tag ${tMap[l.task_type]||''}">${tLabel[l.task_type]||l.task_type}</span></td>
-      <td class="mono">${l.proposed_score}/${l.max_score}</td>
-      <td><span class="tag ${sBadge}">${sLabel}</span></td>
-      <td>${final}</td>
-      <td style="font-size:11px;color:var(--text-3)">${decidedBy}</td>
-      <td style="font-size:11px;color:var(--text-3)">${backendLabel}</td>
-      <td class="mono" style="color:var(--text-3)">${dt}</td>
-    </tr>`;
-  }).join('');
-}
-
-function renderAnalytics(s, k) {
-  if (s.message) return;
-  const bt = s.by_task_type || {};
-  const types = ['qcm','short_answer','essay','formal'];
-  const labels = ['QCM','Réponse courte','Rédaction','Exercice formel'];
-  const rows = types.map((t,i) => {
-    const d = bt[t]||{};
-    return `<tr><td>${labels[i]}</td><td class="mono">${d.total_evaluations||0}</td><td class="mono">${d.requires_human_review||0}</td><td class="mono">${d.avg_ai_score_pct!=null?d.avg_ai_score_pct+'%':'—'}</td><td class="mono">${d.avg_human_score_pct!=null?d.avg_human_score_pct+'%':'—'}</td><td class="mono">${d.modification_rate_pct!=null?d.modification_rate_pct+'%':'—'}</td><td class="mono">${d.validated||0}</td><td class="mono">${d.modified||0}</td><td class="mono">${d.rejected||0}</td></tr>`;
-  }).join('');
-  const kappaHtml = k.message
-    ? `<p style="color:var(--text-3);font-size:13px">${k.message}</p>`
-    : `<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:300;color:${k.quadratic_weighted_kappa>=0.8?'var(--green)':k.quadratic_weighted_kappa>=0.6?'var(--amber)':'var(--red)'}">${k.quadratic_weighted_kappa.toFixed(4)}</span><span style="font-size:13px;color:var(--text-2)">${k.interpretation}</span></div><div style="font-size:11px;color:var(--text-3)">${k.n_evaluated} paires · &lt;0.4 faible · 0.4–0.6 modéré · 0.6–0.8 substantiel · &gt;0.8 quasi parfait</div>`;
-  document.getElementById('analytics-content').innerHTML = `
-    <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Kappa de Cohen pondéré quadratique</span></div><div class="card-body">${kappaHtml}</div></div>
-    <div class="table-card"><div class="table-toolbar"><span class="card-title">Performance par type de tâche</span></div>
-    <table><thead><tr><th>Type</th><th>Total</th><th>Révision requise</th><th>Score moy. IA</th><th>Score moy. humain</th><th>Taux modif.</th><th>Validées</th><th>Modifiées</th><th>Rejetées</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderLogs(allLogs);
-}
-
-function showPage(p) {
-  ['dashboard','devoirs','analytics','logs'].forEach(id => document.getElementById('page-'+id).style.display = id===p?'':'none');
-  document.querySelectorAll('.nav-item').forEach((el,i) => el.classList.toggle('active', ['dashboard','devoirs','analytics','logs'][i]===p));
-}
-
-// ─── Actions HITL ────────────────────────────────────────────────────
-
-async function quickValidate(logId, score, maxScore, context) {
-  try {
-    await fetch(`/review/${logId}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({final_score: score, decision: 'validated', prof_comment: ''})
-    });
-    showToast('✓ Score validé et envoyé à Moodle avec mention enseignant');
-    await loadAll();
-  } catch(e) { showToast('Erreur : '+e.message); }
-}
-
-function openMod(logId, score, max, context) {
-  modLogId=logId; modMax=max;
-  document.getElementById('mod-context').textContent = context;
-  document.getElementById('mod-score').value = score;
-  document.getElementById('mod-score').max = max;
-  document.getElementById('mod-max-label').textContent = max;
-  document.getElementById('mod-comment').value = '';
-  document.getElementById('overlay-mod').classList.add('open');
-}
-
-async function submitMod() {
-  const score = parseFloat(document.getElementById('mod-score').value);
-  const comment = document.getElementById('mod-comment').value.trim();
-  if (isNaN(score)||score<0||score>modMax) { showToast('Score invalide (0–'+modMax+')'); return; }
-  try {
-    await fetch(`/review/${modLogId}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({final_score: score, decision: 'modified', prof_comment: comment})
-    });
-    closeModals();
-    showToast('✎ Score modifié et envoyé à Moodle');
-    await loadAll();
-  } catch(e) { showToast('Erreur : '+e.message); }
-}
-
-function openReject(logId, context) {
-  rejectLogId = logId;
-  document.getElementById('reject-context').textContent = context;
-  document.getElementById('reject-comment').value = '';
-  document.getElementById('overlay-reject').classList.add('open');
-}
-
-async function submitReject() {
-  const comment = document.getElementById('reject-comment').value.trim();
-  try {
-    await fetch(`/review/${rejectLogId}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({final_score: 0, decision: 'rejected', prof_comment: comment})
-    });
-    closeModals();
-    showToast('⚠ Évaluation rejetée — note provisoire 0 dans Moodle');
-    await loadAll();
-  } catch(e) { showToast('Erreur : '+e.message); }
-}
-
-function closeModals() {
-  document.getElementById('overlay-mod').classList.remove('open');
-  document.getElementById('overlay-reject').classList.remove('open');
-  modLogId = null; rejectLogId = null;
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3500);
-}
-
-loadAll();
-setInterval(loadAll, 30000);
-</script>
+<script src="dashboard.charts.js"></script>
+<script src="dashboard.demo.js"></script>
+<script src="dashboard.app.js"></script>
 </body>
 </html>

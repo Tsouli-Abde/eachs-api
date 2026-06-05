@@ -36,6 +36,16 @@ DATA = [
                 "description": "Qu'est-ce que le surapprentissage (overfitting) ? Expliquez ses causes et proposez deux méthodes pour l'éviter.",
                 "soumission": "Le overfitting survient quand un modèle mémorise les données d'entraînement sans généraliser. Causes : modèle trop complexe, données insuffisantes. Solutions : régularisation L1/L2 qui pénalise les grands poids, et dropout qui désactive aléatoirement des neurones pendant l'entraînement.",
             },
+            {
+                "name": "QCM — Complexité algorithmique",
+                "description": "Quelle est la complexité temporelle de l'algorithme BFS dans un graphe avec V sommets et E arêtes ? A) O(V) B) O(E) C) O(V+E) D) O(V*E)",
+                "soumission": "C) O(V+E)",
+            },
+            {
+                "name": "Définition courte — Overfitting",
+                "description": "En une ou deux phrases, définissez le surapprentissage (overfitting) et citez une méthode pour l'éviter.",
+                "soumission": "Le surapprentissage survient quand un modèle mémorise les données d'entraînement sans généraliser. On peut l'éviter avec la régularisation L2.",
+            },
         ]
     },
     {
