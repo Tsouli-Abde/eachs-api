@@ -1,0 +1,116 @@
+# EACHS — Évaluation Assistée sous Contrôle Humain Structuré
+
+API d'évaluation pédagogique assistée par IA, intégrée à Moodle, avec contrôle
+humain systématique (HITL) et journal d'audit conforme à l'AI Act.
+
+## Arborescence
+
+```
+eachs-api/
+├── backend/            Code applicatif (API FastAPI, IA, Moodle, audit)
+│   ├── main.py           API REST + endpoints /evaluate, /review, /stats, /dashboard
+│   ├── models.py         Schémas Pydantic
+│   ├── evaluator.py      Backends IA (Ollama local, Gemini, OpenRouter, interne)
+│   ├── extractor.py      Extraction de texte (PDF, DOCX, images…)
+│   ├── audit.py          Journal d'audit sur SQLite (thread-safe)
+│   └── scheduler.py      Détection auto des soumissions Moodle
+├── dashboard/          Interface web (HTML + JS) servie par l'API
+├── evaluation/         Outils de mesure de concordance (QWK)
+│   ├── prepare_asap.py   Prépare un corpus depuis ASAP-SAS
+│   ├── batch_runner.py   Évalue un corpus en masse via l'API
+│   ├── metrics.py        Calcule QWK, accord exact/adjacent, stabilité
+│   └── prompts/          Énoncés des essay sets ASAP-SAS
+├── scripts/            Utilitaires (seed Moodle, migration, maintenance)
+├── samples/            Exemples de réponses pour tests manuels
+├── data/               Données runtime (base d'audit, corpus, résultats) — ignoré par git
+├── docs/               commandes.md et documentation
+├── docker-compose.yml  Moodle + base de données
+├── Dockerfile
+└── requirements.txt
+```
+
+## Démarrage rapide
+
+Voir **[docs/commandes.md](docs/commandes.md)** pour le détail. En résumé, 3 terminaux :
+
+```bash
+# 1. Moodle + base
+docker compose up
+
+# 2. API EACHS (backend IA local par défaut : Mistral via Ollama)
+source venv/bin/activate
+uvicorn main:app --app-dir backend --reload
+
+# 3. Scheduler (détection des soumissions)
+python3 backend/scheduler.py
+```
+
+Dashboard : http://localhost:8000/dashboard · Swagger : http://localhost:8000/docs
+
+## Journal d'audit (SQLite)
+
+Le journal d'évaluation est stocké dans `data/audit_log.sqlite` :
+- **thread-safe** : l'API et le scheduler peuvent écrire en parallèle sans
+  corrompre le fichier (limite de l'ancien `audit_log.json`) ;
+- **reviewer_id** : chaque décision humaine enregistre l'identifiant du
+  réviseur, ce qui complète le graphe PROV (l'agent enseignant devient
+  identifiable).
+
+Migrer un ancien journal JSON (idempotent) :
+```bash
+python3 scripts/migrate_json_to_sqlite.py audit_log.json
+```
+
+## Évaluation en masse (concordance QWK)
+
+Obtenir des mesures de concordance crédibles (QWK sur des centaines de copies
+avec une vraie référence humaine, comparable à la littérature).
+
+### Étape 1 — Récupérer le corpus ASAP-SAS
+1. https://www.kaggle.com/competitions/asap-sas/data → `train.tsv`
+   (~17 000 réponses courtes, notées par DEUX correcteurs humains)
+2. Copier l'énoncé de l'essay set choisi (description Kaggle) dans un fichier
+   texte, ex. `evaluation/prompts/set1.txt`
+3. Échantillonner (stratifié par note) :
+```bash
+python3 evaluation/prepare_asap.py --train train.tsv --essay-set 1 \
+    --question-file evaluation/prompts/set1.txt --n 200 --out data/corpus_set1.csv
+```
+Conseil : 2 essay sets différents × 200 réponses = 400 points de mesure.
+
+### Étape 2 — Lancer le batch (l'API EACHS doit tourner)
+```bash
+# run principal (1 passage par copie)
+python3 evaluation/batch_runner.py --corpus data/corpus_set1.csv \
+    --api http://localhost:8000 --out data/results_set1.jsonl --delay 3
+
+# stabilité : 5 passages sur 30 copies
+python3 evaluation/batch_runner.py --corpus data/corpus_set1.csv \
+    --api http://localhost:8000 --out data/results_stability.jsonl \
+    --repeats 5 --limit 30 --delay 3
+```
+Interruptible et reprenable : relancer la même commande reprend où ça s'est
+arrêté. Retry automatique sur timeout/429/5xx. Avec Gemini gratuit (5 req/min),
+mettre `--delay 13`.
+
+### Étape 3 — Calculer les métriques
+```bash
+python3 evaluation/metrics.py data/results_set1.jsonl --latex
+```
+Sort le QWK IA/humain, le QWK humain/humain (borne haute naturelle), l'accord
+exact/adjacent, la ventilation par confiance déclarée, la stabilité
+inter-passages, et les lignes LaTeX pour le mémoire.
+
+## Backends IA
+
+Configurable via `AI_BACKEND` dans `.env` : `local` (Mistral via Ollama, défaut),
+`cloud` (Gemini), `openrouter`, `internal`. Voir `docs/commandes.md § 3`.
+
+## Pistes suivantes (non codées)
+
+1. Validation du barème par l'enseignant avant usage.
+2. Webhook Moodle (plugin PHP) pour remplacer le polling du scheduler.
+3. Seuils de confiance configurables par type de tâche dans le dashboard.
+4. Chaînage d'empreintes SHA-256 des enregistrements (immuabilité vérifiable).
+5. Red teaming du SYSTEM_GUARD (30-50 soumissions adverses, colonne
+   `manipulation_detected` déjà présente dans les résultats).

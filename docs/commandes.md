@@ -3,7 +3,12 @@
 ## Prérequis
 - Docker Desktop lancé (icône baleine active)
 - Terminal dans le dossier `eachs-api`
-- Ollama installé sur la machine
+- Ollama installé sur la machine (backend IA local par défaut)
+
+> Nouvelle arborescence : le code applicatif est dans `backend/`, le dashboard
+> dans `dashboard/`, les outils de mesure dans `evaluation/`, les scripts
+> utilitaires dans `scripts/`, et les données runtime (base d'audit, corpus,
+> résultats) dans `data/`.
 
 ---
 
@@ -27,8 +32,9 @@ Login : `admin` / `Admin1234!`
 cd eachs-api
 source venv/bin/activate
 unset MOODLE_URL && unset MOODLE_TOKEN
-uvicorn main:app --reload
+uvicorn main:app --app-dir backend --reload
 ```
+`--app-dir backend` indique à uvicorn où se trouve le code applicatif.
 API accessible sur : **http://localhost:8000**
 Dashboard : **http://localhost:8000/dashboard**
 Documentation API : **http://localhost:8000/docs**
@@ -40,7 +46,7 @@ Documentation API : **http://localhost:8000/docs**
 cd eachs-api
 source venv/bin/activate
 unset MOODLE_URL && unset MOODLE_TOKEN
-python3 scheduler.py
+python3 backend/scheduler.py
 ```
 Le scheduler vérifie toutes les `CHECK_INTERVAL` secondes (défini dans `.env`).
 
@@ -49,22 +55,22 @@ Le scheduler vérifie toutes les `CHECK_INTERVAL` secondes (défini dans `.env`)
 ## 2. Paramètres du fichier .env
 
 ```
-GEMINI_API_KEY=...          # Clé API Gemini (cloud)
+GEMINI_API_KEY=...          # Clé API Gemini (cloud, optionnel)
 MOODLE_URL=http://localhost:8080
 MOODLE_TOKEN=...            # Token API Moodle
 MOODLE_ADMIN_USER=admin
 MOODLE_ADMIN_PASSWORD=Admin1234!
 EACHS_URL=http://localhost:8000
-AI_BACKEND=local            # local = Mistral | cloud = Gemini
+AI_BACKEND=local            # local = Mistral via Ollama (défaut)
 OLLAMA_MODEL=mistral
-CHECK_INTERVAL=10           # Secondes entre chaque vérification (10 pour les tests, 60 pour la prod)
+CHECK_INTERVAL=10           # Secondes entre chaque vérification (10 tests, 60 prod)
 ```
 
 ---
 
 ## 3. Changer de modèle IA
 
-### Passer en local (Mistral via Ollama)
+### Backend local (Mistral via Ollama) — configuration par défaut
 ```bash
 # Dans .env
 AI_BACKEND=local
@@ -75,10 +81,12 @@ ollama list
 ollama run mistral "test"
 ```
 
-### Passer en cloud (Gemini)
+### Autres backends (optionnels)
 ```bash
-# Dans .env
-AI_BACKEND=cloud
+# Dans .env, au choix :
+AI_BACKEND=cloud       # Gemini
+AI_BACKEND=openrouter  # OpenRouter
+AI_BACKEND=internal    # API interne entreprise
 ```
 
 ---
@@ -88,32 +96,40 @@ AI_BACKEND=cloud
 ### Peupler Moodle avec des données de test
 ```bash
 source venv/bin/activate
-python3 seed_complete.py
+python3 scripts/seed_complete.py
 ```
 
-### Forcer la réévaluation d'une soumission
+### Journal d'audit : SQLite au lieu de JSON
+Le journal est désormais une base SQLite : `data/audit_log.sqlite`
+(thread-safe, pas de corruption quand l'API et le scheduler écrivent en même temps).
+
+Migrer un ancien `audit_log.json` vers la base (idempotent) :
 ```bash
-# Supprimer le log correspondant dans audit_log.json
-# ou vider tous les logs :
-rm audit_log.json
+python3 scripts/migrate_json_to_sqlite.py audit_log.json
 ```
 
-### Vérifier les logs d'évaluation
+Vérifier les logs d'évaluation :
 ```bash
 python3 -c "
-import json
-with open('audit_log.json') as f:
-    logs = json.load(f)
+import sys; sys.path.insert(0, 'backend')
+from audit import get_all_logs
+logs = get_all_logs()
 print(f'{len(logs)} évaluations')
 for l in logs[-3:]:
     print(f'  [{l[\"task_type\"]}] {l[\"assignment_name\"]} | score={l[\"proposed_score\"]}/{l[\"max_score\"]} | {l[\"human_decision\"] or \"en attente\"}')
 "
 ```
 
+### Forcer la réévaluation d'une soumission
+```bash
+# Vider tout le journal (repart de zéro) :
+rm -f data/audit_log.sqlite
+```
+
 ### Réinitialiser complètement (fresh start)
 ```bash
-# Supprimer les logs locaux
-rm -f audit_log.json processed_submissions.txt
+# Supprimer les données locales
+rm -f data/audit_log.sqlite processed_submissions.txt
 
 # Vider Moodle
 docker compose exec db mysql -u moodle -pmoodlepass moodle -e "
@@ -124,12 +140,30 @@ DELETE FROM mdl_assign_grades WHERE id > 0;
 "
 
 # Relancer le seed
-python3 seed_complete.py
+python3 scripts/seed_complete.py
 ```
 
 ---
 
-## 5. Arrêter l'environnement
+## 5. Mesurer la concordance (QWK) — outils du dossier evaluation/
+
+Voir `README.md` (section « Évaluation en masse ») pour le détail. En bref :
+```bash
+# 1. Préparer un corpus depuis ASAP-SAS
+python3 evaluation/prepare_asap.py --train train.tsv --essay-set 1 \
+    --question-file evaluation/prompts/set1.txt --n 200 --out data/corpus_set1.csv
+
+# 2. Lancer le batch (l'API EACHS doit tourner)
+python3 evaluation/batch_runner.py --corpus data/corpus_set1.csv \
+    --api http://localhost:8000 --out data/results_set1.jsonl --delay 3
+
+# 3. Calculer les métriques
+python3 evaluation/metrics.py data/results_set1.jsonl --latex
+```
+
+---
+
+## 6. Arrêter l'environnement
 
 ```bash
 # Terminal scheduler : Ctrl+C
@@ -144,13 +178,13 @@ docker compose down -v
 
 ---
 
-## 6. Accès rapide
+## 7. Accès rapide
 
 | Service | URL |
 |---|---|
 | Moodle | http://localhost:8080 |
 | Dashboard EACHS | http://localhost:8000/dashboard |
 | API Docs (Swagger) | http://localhost:8000/docs |
-| Logs JSON | http://localhost:8000/logs |
+| Logs (JSON via API) | http://localhost:8000/logs |
 | Stats | http://localhost:8000/stats |
 | Kappa | http://localhost:8000/stats/kappa |
