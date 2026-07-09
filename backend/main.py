@@ -1,5 +1,6 @@
 import os
 import requests
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -11,6 +12,11 @@ from collections import defaultdict
 from fastapi.responses import HTMLResponse, FileResponse
 import tempfile
 import shutil
+
+# Le dashboard web est servi depuis le dossier dashboard/ à la racine du projet,
+# indépendamment du répertoire de lancement de l'API.
+BASE_DIR = Path(__file__).resolve().parent.parent
+DASHBOARD_DIR = BASE_DIR / "dashboard"
 
 app = FastAPI(
     title="EACHS API",
@@ -169,6 +175,7 @@ class HumanReview(BaseModel):
     final_score: float
     decision: str  # "validated", "modified", "rejected"
     prof_comment: Optional[str] = ""
+    reviewer_id: Optional[str] = "enseignant_1"  # PROV : agent enseignant identifiable
 
 
 @app.post("/review/{log_id}")
@@ -176,7 +183,8 @@ def submit_human_review(log_id: str, review: HumanReview):
     if review.decision not in ["validated", "modified", "rejected"]:
         raise HTTPException(status_code=400, detail="Decision must be: validated, modified, or rejected")
 
-    success = update_human_decision(log_id, review.final_score, review.decision, review.prof_comment)
+    success = update_human_decision(log_id, review.final_score, review.decision,
+                                    review.prof_comment, review.reviewer_id)
     if not success:
         raise HTTPException(status_code=404, detail="Log ID not found")
 
@@ -350,17 +358,16 @@ def get_kappa():
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    with open("dashboard.html", "r", encoding="utf-8") as f:
-        return f.read()
+    return (DASHBOARD_DIR / "dashboard.html").read_text(encoding="utf-8")
 
 @app.get("/dashboard.charts.js")
 def charts_js():
-    return FileResponse("dashboard.charts.js", media_type="application/javascript")
+    return FileResponse(DASHBOARD_DIR / "dashboard.charts.js", media_type="application/javascript")
 
 @app.get("/dashboard.demo.js")
 def demo_js():
-    return FileResponse("dashboard.demo.js", media_type="application/javascript")
+    return FileResponse(DASHBOARD_DIR / "dashboard.demo.js", media_type="application/javascript")
 
 @app.get("/dashboard.app.js")
 def app_js():
-    return FileResponse("dashboard.app.js", media_type="application/javascript")
+    return FileResponse(DASHBOARD_DIR / "dashboard.app.js", media_type="application/javascript")

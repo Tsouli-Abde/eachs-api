@@ -10,6 +10,10 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 
+# Le suivi des soumissions déjà évaluées passe désormais par la base SQLite
+# (backend/audit.py), plus par le fichier audit_log.json.
+from audit import get_last_evaluation_time
+
 load_dotenv()
 
 MOODLE_URL = os.environ.get("MOODLE_URL", "http://localhost:8080")
@@ -49,30 +53,7 @@ def get_moodle_session() -> requests.Session:
 
 
 # ─── Audit log ───────────────────────────────────────────────────────
-
-def get_last_evaluation_time(assignment_id: int, user_id: int) -> float:
-    """Retourne le timestamp Unix de la dernière évaluation pour cette soumission."""
-    if not os.path.exists("audit_log.json"):
-        return 0
-    with open("audit_log.json") as f:
-        try:
-            logs = json.load(f)
-        except:
-            return 0
-    matching = [
-        l for l in logs
-        if l.get("assignment_id") == str(assignment_id)
-        and l.get("student_id") == str(user_id)
-    ]
-    if not matching:
-        return 0
-    latest = max(matching, key=lambda l: l.get("timestamp", ""))
-    ts = latest.get("timestamp", "")
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.timestamp()
-    except:
-        return 0
+# get_last_evaluation_time est fourni par backend/audit.py (base SQLite).
 
 
 # ─── API Moodle ───────────────────────────────────────────────────────

@@ -1,6 +1,12 @@
-import requests, json, os
+import sys, os
+import requests
+from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
+
+# Accès au module d'audit du backend (base SQLite).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+from audit import insert_raw
 
 load_dotenv()
 
@@ -60,6 +66,6 @@ for course in r.json():
                             'reviewed_at': None
                         })
 
-with open('audit_log.json', 'w') as f:
-    json.dump(logs, f, indent=2, ensure_ascii=False)
-print(f'{len(logs)} soumissions marquees comme traitees')
+for entry in logs:
+    insert_raw(entry)
+print(f'{len(logs)} soumissions marquees comme traitees (base SQLite)')
