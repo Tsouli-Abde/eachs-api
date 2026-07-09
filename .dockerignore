@@ -3,4 +3,8 @@ __pycache__/
 *.pyc
 .env
 audit_log.json
+data/
+*.sqlite
+*.jsonl
+moodle_backup.sql
 .vscode/

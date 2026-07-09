@@ -7,3 +7,9 @@ audit_log.json
 processed_submissions.txt
 debug_moodle.py
 *.tmp
+
+# Données runtime (base d'audit SQLite, corpus et résultats de batch)
+data/*
+!data/.gitkeep
+*.sqlite
+*.jsonl
