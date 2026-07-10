@@ -32,8 +32,14 @@ services:
     networks:
       - eachs_network
 
+  # API EACHS en conteneur — NE démarre PAS par défaut (profil "api").
+  # En dev, l'API tourne en local (uvicorn) pour accéder à Ollama sur la machine ;
+  # un conteneur ne verrait pas Ollama (127.0.0.1 pointe vers le conteneur).
+  # `docker compose up`             -> Moodle + base seulement
+  # `docker compose --profile api up` -> ajoute l'API en conteneur
   eachs:
     build: .
+    profiles: ["api"]
     ports:
       - "8000:8000"
     environment:

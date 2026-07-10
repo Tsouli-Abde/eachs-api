@@ -25,6 +25,13 @@ Attendre : `Apache/2.4.54 configured -- resuming normal operations`
 Moodle accessible sur : **http://localhost:8080**
 Login : `admin` / `Admin1234!`
 
+> ⚠️ `docker compose up` ne démarre **que** Moodle + la base. L'API EACHS tourne
+> en **local** (Terminal 2), pas dans Docker, car le backend IA local (Ollama)
+> tourne sur ta machine : un conteneur ne le verrait pas. Ne lance donc pas
+> l'API en conteneur en même temps (elle occuperait le port 8000 et échouerait
+> avec « Failed to connect to Ollama »). Si tu veux quand même la version
+> conteneur : `docker compose --profile api up`.
+
 ---
 
 ### Terminal 2 — API EACHS (FastAPI)
