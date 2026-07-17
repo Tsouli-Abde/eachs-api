@@ -15,11 +15,17 @@ L'interface publique est IDENTIQUE à l'ancien audit.py :
     get_all_logs() -> list
 main.py et scheduler.py fonctionnent donc sans changer leurs imports.
 
-La base est stockée dans <racine du projet>/data/audit_log.sqlite.
+La base est stockée dans <racine du projet>/data/audit_log.sqlite par défaut.
+Surchargeable avec la variable d'environnement AUDIT_DB_PATH (utile pour isoler
+les runs d'évaluation en masse d'un dataset dans leur propre fichier, sans
+polluer la base utilisée par le dashboard) :
+    $env:AUDIT_DB_PATH="data/audit_log_aes2.sqlite"   (PowerShell, avant de lancer uvicorn)
+
 Migration depuis un ancien audit_log.json :
     python scripts/migrate_json_to_sqlite.py audit_log.json
 """
 
+import os
 import sqlite3
 import threading
 import uuid
@@ -29,7 +35,7 @@ from pathlib import Path
 # Base rangée dans data/ à la racine du projet (backend/ -> racine).
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
-DB_FILE = DATA_DIR / "audit_log.sqlite"
+DB_FILE = Path(os.environ.get("AUDIT_DB_PATH")) if os.environ.get("AUDIT_DB_PATH") else DATA_DIR / "audit_log.sqlite"
 
 _lock = threading.Lock()
 
