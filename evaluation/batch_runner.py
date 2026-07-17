@@ -11,6 +11,11 @@ Robustesse intégrée (file d'attente + reprise) :
 - retry avec backoff exponentiel sur timeout / 429 / 5xx
 - régulation du débit (--delay) pour respecter les rate limits
 
+Concurrence : --concurrency N traite N copies en parallèle (défaut 1 = séquentiel,
+comportement d'origine). Avec --concurrency > 1, --delay n'est plus utilisé comme
+pause entre appels (le nombre de workers régule déjà le débit) ; il sert uniquement
+de base au backoff exponentiel en cas de retry.
+
 Mesure de stabilité : --repeats N évalue chaque copie N fois
 (run_index 0..N-1), ce qui permet de mesurer la cohérence inter-passages.
 
@@ -18,6 +23,10 @@ Usage typique :
     python evaluation/batch_runner.py --corpus data/corpus_set1.csv \
         --api http://localhost:8000 --out data/results_set1.jsonl \
         --delay 3 --repeats 1
+    # avec concurrence (backend qui supporte la charge) :
+    python evaluation/batch_runner.py --corpus data/corpus_set1.csv \
+        --api http://localhost:8000 --out data/results_set1.jsonl \
+        --concurrency 4
     # puis, stabilité sur un sous-échantillon :
     python evaluation/batch_runner.py --corpus data/corpus_set1.csv \
         --api http://localhost:8000 --out data/results_stability.jsonl \
@@ -27,7 +36,9 @@ Usage typique :
 import argparse
 import csv
 import json
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -38,13 +49,16 @@ parser.add_argument("--corpus", required=True)
 parser.add_argument("--api", default="http://localhost:8000")
 parser.add_argument("--out", default="data/results.jsonl")
 parser.add_argument("--delay", type=float, default=3.0,
-                    help="secondes entre deux appels (rate limit)")
+                    help="secondes entre deux appels en mode séquentiel ; "
+                         "base du backoff exponentiel sur retry dans tous les cas")
 parser.add_argument("--repeats", type=int, default=1,
                     help="nombre d'évaluations par copie (stabilité)")
 parser.add_argument("--limit", type=int, default=0,
                     help="ne traiter que les N premières copies (0 = toutes)")
 parser.add_argument("--max-retries", type=int, default=4)
 parser.add_argument("--timeout", type=int, default=120)
+parser.add_argument("--concurrency", type=int, default=1,
+                    help="nombre de requêtes en parallèle (défaut 1 = séquentiel)")
 args = parser.parse_args()
 
 # --- corpus ---
@@ -65,7 +79,6 @@ if out_path.exists():
                 done.add((r["item_id"], r["run_index"]))
             except (json.JSONDecodeError, KeyError):
                 continue
-print(f"{len(items)} copies x {args.repeats} passages ; {len(done)} déjà faits")
 
 
 def evaluate(item, run_index):
@@ -96,41 +109,62 @@ def evaluate(item, run_index):
             time.sleep(wait)
 
 
+tasks = [(item, run) for item in items for run in range(args.repeats)
+         if (item["item_id"], run) not in done]
 total = len(items) * args.repeats
 count_done = len(done)
-with open(out_path, "a", encoding="utf-8") as out:
-    for item in items:
-        for run in range(args.repeats):
-            key = (item["item_id"], run)
-            if key in done:
-                continue
-            result = evaluate(item, run)
-            record = {
-                "item_id": item["item_id"],
-                "run_index": run,
-                "task_type": item["task_type"],
-                "human_score": float(item["human_score"]),
-                "human_score_2": float(item["human_score_2"]) if item.get("human_score_2") else None,
-                "max_score": float(item["max_score"]),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-            if result and "error" not in result:
-                record.update({
-                    "ai_score": result.get("score", result.get("proposed_score")),
-                    "confidence": result.get("confidence"),
-                    "feedback": result.get("feedback"),
-                    "manipulation_detected": result.get("manipulation_detected", False),
-                    "backend": result.get("backend"),
-                    "prompt_version": result.get("prompt_version"),
-                })
-            else:
-                record["error"] = (result or {}).get("error", "réponse vide")
-            out.write(json.dumps(record, ensure_ascii=False) + "\n")
-            out.flush()
-            count_done += 1
-            score = record.get("ai_score", "ERR")
-            print(f"[{count_done}/{total}] {item['item_id']} run{run} "
-                  f"-> IA {score} / humain {item['human_score']}")
-            time.sleep(args.delay)
+lock = threading.Lock()
+out_file = open(out_path, "a", encoding="utf-8")
 
+print(f"{len(items)} copies x {args.repeats} passages ; {len(done)} déjà faits ; "
+      f"{len(tasks)} restants (concurrence={args.concurrency})")
+
+
+def process(task):
+    global count_done
+    item, run = task
+    result = evaluate(item, run)
+    record = {
+        "item_id": item["item_id"],
+        "run_index": run,
+        "task_type": item["task_type"],
+        "human_score": float(item["human_score"]),
+        "human_score_2": float(item["human_score_2"]) if item.get("human_score_2") else None,
+        "max_score": float(item["max_score"]),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if result and "error" not in result:
+        record.update({
+            "ai_score": result.get("score", result.get("proposed_score")),
+            "confidence": result.get("confidence"),
+            "feedback": result.get("feedback"),
+            "manipulation_detected": result.get("manipulation_detected", False),
+            "backend": result.get("backend"),
+            "prompt_version": result.get("prompt_version"),
+        })
+    else:
+        record["error"] = (result or {}).get("error", "réponse vide")
+
+    with lock:
+        out_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        out_file.flush()
+        count_done += 1
+        n = count_done
+    score = record.get("ai_score", "ERR")
+    print(f"[{n}/{total}] {item['item_id']} run{run} "
+          f"-> IA {score} / humain {item['human_score']}")
+    if args.concurrency <= 1:
+        time.sleep(args.delay)
+
+
+if args.concurrency <= 1:
+    for task in tasks:
+        process(task)
+else:
+    with ThreadPoolExecutor(max_workers=args.concurrency) as executor:
+        futures = [executor.submit(process, t) for t in tasks]
+        for f in as_completed(futures):
+            f.result()  # relève une éventuelle exception survenue dans un worker
+
+out_file.close()
 print(f"Terminé. Résultats dans {out_path}")
