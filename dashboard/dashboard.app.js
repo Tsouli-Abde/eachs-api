@@ -217,6 +217,8 @@ function selectDevoir(key){ selectedDevoirKey=key; renderDevoirsList(allLogs); r
 function renderEtudiants(key){
   const g=groupByDevoir(allLogs)[key]; const panel=document.getElementById('etudiants-panel'); if(!g) return;
   const wasOpen=getOpenCards();
+  const prevList=panel.querySelector('.etudiants-list');
+  const prevScroll=prevList?prevList.scrollTop:0;
   const pending=g.logs.filter(l=>l.requires_human_review&&!l.human_decision).length;
   const manual=g.logs.filter(l=>l.human_decision==='rejected').length;
   let html=`<div class="etudiants-panel-header">
@@ -243,10 +245,10 @@ function renderEtudiants(key){
       const dt=new Date(l.timestamp).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});
       const preview=(l.student_answer_preview||l.student_answer||'').substring(0,400);
       const feedback=(l.feedback||'').substring(0,500);
-      const name=studentLabel(l), context=`${name} — ${g.devoir}`;
+      const name=studentLabel(l), context=`${name} · ${g.devoir}`;
 
       let decision='';
-      if(l.human_decision==='validated') decision=`<div class="decision-box validated">✓ Validé par l'enseignant${l.human_comment?' — '+l.human_comment:''}<br><small>Score final : ${l.human_final_score}/${l.max_score} · ${fmtDate(l.reviewed_at)}</small></div>`;
+      if(l.human_decision==='validated') decision=`<div class="decision-box validated">✓ Validé par l'enseignant${l.human_comment?' : '+l.human_comment:''}<br><small>Score final : ${l.human_final_score}/${l.max_score} · ${fmtDate(l.reviewed_at)}</small></div>`;
       else if(l.human_decision==='modified') decision=`<div class="decision-box modified">✎ Score modifié : ${l.proposed_score} → ${l.human_final_score}/${l.max_score}${l.human_comment?'<br>'+l.human_comment:''}<br><small>${fmtDate(l.reviewed_at)}</small></div>`;
       else if(l.human_decision==='rejected') decision=`<div class="decision-box rejected">⚠ Correction manuelle requise${l.human_comment?'<br>'+l.human_comment:''}<br><small>Note provisoire 0 dans Moodle · ${fmtDate(l.reviewed_at)}</small></div>`;
 
@@ -271,7 +273,7 @@ function renderEtudiants(key){
           <div class="section-label">Question posée</div>
           <div class="content-box">${l.question||'—'}</div>
           <div class="section-label">Réponse de l'étudiant</div>
-          <div class="content-box">${preview||'<em style="color:var(--faint)">Soumission fichier — voir Moodle</em>'}</div>
+          <div class="content-box">${preview||'<em style="color:var(--faint)">Soumission fichier (voir dans Moodle)</em>'}</div>
           <div class="section-label">Feedback proposé par l'IA</div>
           <div class="feedback-box">${feedback||'—'}</div>
           <div class="section-label">Backend IA</div>
@@ -288,8 +290,10 @@ function renderEtudiants(key){
   }
   html+='</div>';
   panel.innerHTML=html;
-  // Restaurer les cartes ouvertes avant le refresh
+  // Restaurer les cartes ouvertes et la position de lecture avant le refresh
   wasOpen.forEach(id=>{ const c=document.getElementById('card-'+id); if(c) c.classList.add('open'); });
+  const newList=panel.querySelector('.etudiants-list');
+  if(newList) newList.scrollTop=prevScroll;
 }
 function toggleCard(id){ const c=document.getElementById('card-'+id); if(c) c.classList.toggle('open'); }
 
@@ -428,7 +432,7 @@ function openReject(logId, context){
 }
 async function submitReject(){
   const comment=document.getElementById('reject-comment').value.trim();
-  try{ await postReview(rejectLogId,{final_score:0,decision:'rejected',prof_comment:comment}); closeModals(); showToast('⚠ Évaluation rejetée — note provisoire 0 dans Moodle'); await loadAll(); }
+  try{ await postReview(rejectLogId,{final_score:0,decision:'rejected',prof_comment:comment}); closeModals(); showToast('⚠ Évaluation rejetée, note provisoire 0 dans Moodle'); await loadAll(); }
   catch(e){ showToast('Erreur : '+e.message); }
 }
 function closeModals(){ document.getElementById('overlay-mod').classList.remove('open'); document.getElementById('overlay-reject').classList.remove('open'); modLogId=null; rejectLogId=null; }
@@ -448,7 +452,7 @@ function exportCsv(){
 /* ───────── Toast & helpers ───────── */
 function showToast(msg, logId){
   const t=document.getElementById('toast');
-  t.textContent = logId ? msg + ' — Cliquer pour voir' : msg;
+  t.textContent = logId ? msg + ' (cliquer pour voir)' : msg;
   t.classList.add('show');
   t.style.cursor = logId ? 'pointer' : 'default';
   t.onclick = logId ? ()=>{

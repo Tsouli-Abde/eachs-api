@@ -60,15 +60,15 @@ def build_moodle_feedback(decision: str, ai_score: float, final_score: float,
     if decision == "validated":
         header = f"✓ Score validé par l'enseignant : {final_score}/{max_score}"
         body = f"{ai_feedback}"
-        note = "[Évaluation IA revue et approuvée par l'enseignant — AI Act art. 14]"
+        note = "[Évaluation IA revue et approuvée par l'enseignant (AI Act, art. 14)]"
     elif decision == "modified":
         header = f"✎ Score modifié par l'enseignant : {final_score}/{max_score} (IA proposait {ai_score}/{max_score})"
         body = f"{ai_feedback}"
-        note = "[Score ajusté après révision humaine — AI Act art. 14]"
+        note = "[Score ajusté après révision humaine (AI Act, art. 14)]"
     elif decision == "rejected":
-        header = f"⚠ Évaluation IA rejetée — correction manuelle en cours"
+        header = f"⚠ Évaluation IA rejetée, correction manuelle en cours"
         body = "L'enseignant a estimé que cette copie nécessite une correction entièrement manuelle."
-        note = "[Évaluation automatique non retenue — AI Act art. 14]"
+        note = "[Évaluation automatique non retenue (AI Act, art. 14)]"
     else:
         header = ""
         body = ai_feedback
@@ -332,10 +332,10 @@ def get_kappa():
 
     kappa = 1.0 if expected_disagreement == 0 else 1 - (observed_disagreement / expected_disagreement)
 
-    if kappa < 0.4: interpretation = "Accord faible — supervision humaine renforcée recommandée"
-    elif kappa < 0.6: interpretation = "Accord modéré — validation humaine systématique nécessaire"
-    elif kappa < 0.8: interpretation = "Accord substantiel — le système est fiable avec validation"
-    else: interpretation = "Accord quasi parfait — le système peut opérer avec supervision allégée"
+    if kappa < 0.4: interpretation = "Accord faible : supervision humaine renforcée recommandée"
+    elif kappa < 0.6: interpretation = "Accord modéré : validation humaine systématique nécessaire"
+    elif kappa < 0.8: interpretation = "Accord substantiel : le système est fiable avec validation"
+    else: interpretation = "Accord quasi parfait : le système peut opérer avec supervision allégée"
 
     return {
         "n_evaluated": n,
