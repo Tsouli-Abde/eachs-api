@@ -1,0 +1,43 @@
+Consigne : Write an argumentative essay in response to a source-based writing prompt. Your essay should
+develop a clear point of view on the issue, supported by examples, reasons, and evidence, and demonstrate
+strong organization and command of language.
+
+Note : le sujet précis (source(s) documentaire(s) et question posée) n'est pas fourni par le jeu de données
+Kaggle "Learning Agency Lab - Automated Essay Scoring 2.0" (seul le texte de l'essai et la note finale sont
+publics, pas la consigne d'origine ni le(s) texte(s) source). L'évaluation se fait donc uniquement sur la base
+de la grille holistique ci-dessous, comme le fait la compétition Kaggle elle-même.
+
+Barème de correction (Holistic Rating for Source-Based Writing, échelle 1-6, écarts considérés égaux) :
+
+SCORE 6 : maîtrise claire et constante (quelques erreurs mineures possibles). Développe un point de vue de façon
+efficace et perspicace, pensée critique remarquable ; exemples, raisons et preuves clairement pertinents tirés
+du/des texte(s) source ; organisation claire et cohérente, progression fluide des idées ; usage habile de la langue,
+vocabulaire varié et précis, variété syntaxique ; quasiment sans erreurs de grammaire/orthographe/mécanique.
+
+SCORE 5 : maîtrise raisonnablement constante (erreurs ou baisses de qualité occasionnelles). Développe un point
+de vue efficacement, pensée critique solide ; exemples/raisons/preuves globalement pertinents tirés du texte
+source ; bien organisé et focalisé, cohérence et progression des idées ; usage aisé de la langue, vocabulaire
+approprié, variété syntaxique ; globalement peu d'erreurs.
+
+SCORE 4 : maîtrise suffisante (avec des baisses de qualité). Développe un point de vue, pensée critique compétente ;
+exemples/raisons/preuves adéquats tirés du texte source ; globalement organisé et focalisé, une certaine cohérence
+et progression des idées ; usage de la langue parfois inégal, vocabulaire globalement approprié, une certaine
+variété syntaxique ; peut contenir quelques erreurs.
+
+SCORE 3 : maîtrise en développement, avec au moins une des faiblesses suivantes : point de vue développé de façon
+incohérente ou exemples/preuves insuffisants ; organisation ou focalisation limitée, quelques ruptures de
+cohérence ; vocabulaire parfois faible ou peu varié, problèmes de construction de phrases ; accumulation
+d'erreurs possible.
+
+SCORE 2 : peu de maîtrise, avec au moins une des faiblesses suivantes : point de vue vague ou très limité, pensée
+critique faible ; exemples/preuves inappropriés ou insuffisants ; organisation ou focalisation faible, problèmes
+sérieux de cohérence ; vocabulaire très limité ou incorrect, problèmes fréquents de construction ; erreurs de
+grammaire/mécanique sérieuses qui obscurcissent parfois le sens.
+
+SCORE 1 : très peu ou pas de maîtrise, avec au moins une des faiblesses suivantes : aucun point de vue viable, peu
+ou pas de preuves à l'appui ; essai désorganisé ou sans focalisation, incohérent ; erreurs fondamentales de
+vocabulaire et/ou de construction de phrases ; erreurs de grammaire/mécanique envahissantes qui gênent
+la compréhension.
+
+Source : grille "Holistic Rating for Source-Based Writing", document officiel fourni avec la compétition Kaggle
+"Learning Agency Lab - Automated Essay Scoring 2.0" (ASAP 2.0).
