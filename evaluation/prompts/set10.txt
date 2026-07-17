@@ -1,0 +1,30 @@
+Question (Doghouse Item) :
+Brandi and Jerry did the following controlled experiment to find out how the color of an object affects its temperature.
+
+Question de l'expérience : Quel est l'effet de différentes couleurs de couvercle sur la température de l'air à l'intérieur d'un bocal en verre exposé à une lampe ?
+Hypothèse : Plus la couleur du couvercle est foncée, plus l'augmentation de température de l'air dans le bocal est importante, car les couleurs foncées absorbent plus d'énergie.
+
+Matériel : bocal en verre, lampe, quatre couvercles colorés (noir, gris foncé, gris clair, blanc), thermomètre, règle, chronomètre.
+
+Procédure :
+1. Mettre le couvercle noir (avec thermomètre attaché) sur le bocal.
+2. S'assurer que la température de départ dans le bocal est de 24°C.
+3. Placer la lampe à 5 cm du couvercle et l'allumer.
+4. Après 10 minutes, mesurer la température de l'air dans le bocal (Essai 1).
+5. Éteindre la lampe et attendre le retour à la température de départ.
+6. Répéter les étapes 2 à 5 pour les essais 2 et 3.
+7. Répéter les étapes 1 à 6 pour les couvercles gris foncé, gris clair et blanc.
+8. Calculer et noter la température moyenne pour chaque couleur de couvercle.
+
+Résultats observés :
+- Couvercle noir : le bocal devient le plus chaud.
+- Couvercle gris foncé : augmentation de 6°C de plus que le blanc.
+- Couvercle gris clair : 8°C plus frais que le noir.
+- Couvercle blanc : ne dépasse pas 42°C.
+
+Brandi and Jerry were designing a doghouse. Use the results from the experiment to describe the best paint color for the doghouse. In your description, be sure to: choose a paint color; describe how that color might affect the inside of the doghouse; use results from the experiment to support your description.
+
+Barème de correction (0-2 points) :
+- 2 points : choisit une couleur ET décrit comment cette couleur affecterait l'intérieur de la niche ET utilise les résultats de l'expérience pour appuyer la description.
+- 1 point : choisit une couleur et décrit l'effet MAIS sans résultats de l'expérience à l'appui, OU choisit une couleur et cite des résultats MAIS sans décrire l'effet sur l'intérieur.
+- 0 point : compréhension faible ou nulle de la démarche attendue.

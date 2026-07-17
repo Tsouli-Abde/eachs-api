@@ -1,0 +1,17 @@
+Question (Protein Synthesis) :
+Starting with mRNA leaving the nucleus, list and describe four major steps involved in protein synthesis.
+
+Barème de correction (0-3 points) :
+Éléments clés attendus :
+- l'ARNm sort du noyau par un pore nucléaire ;
+- l'ARNm traverse le cytoplasme jusqu'au ribosome ou entre dans le réticulum endoplasmique rugueux ;
+- les bases de l'ARNm sont lues par triplets appelés codons (par l'ARNr) ;
+- l'ARNt porteur de l'anticodon complémentaire reconnaît le codon complémentaire de l'ARNm ;
+- les acides aminés correspondants sont liés aux acides aminés des ARNt adjacents ;
+- un nouvel acide aminé est ajouté à l'ARNt ;
+- les acides aminés sont liés pour former une protéine, en commençant par un codon START (initiation) ;
+- les acides aminés continuent d'être liés jusqu'à un codon STOP (élongation et terminaison).
+- 3 points : quatre éléments clés présents.
+- 2 points : trois éléments clés présents.
+- 1 point : un ou deux éléments clés présents.
+- 0 point : autre / aucun élément pertinent.

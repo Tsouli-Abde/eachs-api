@@ -1,0 +1,28 @@
+Question (Polymer Investigation) :
+A student performed the following investigation to test four different polymer plastics for stretchability.
+
+Procedure:
+1. Take a sample of one type of plastic, and measure its length.
+2. Tape the top edge of the plastic sample to a table so that it is hanging freely down the side of the table.
+3. Attach a clamp to the bottom edge of the plastic sample.
+4. Add weights to the clamp and allow them to hang for five minutes.
+5. Remove the weights and clamp, and measure the length of the plastic sample.
+6. Repeat the procedure exactly for the remaining three plastic samples.
+7. Perform a second trial (T2) exactly like the first trial (T1).
+
+Data (amount stretched, mm):
+Plastic Type | T1 | T2
+A | 10 | 12
+B | 22 | 23
+C | 14 | 13
+D | 20 | 20
+
+Draw a conclusion based on the student's data. Describe two ways the student could have improved the experimental design and/or validity of the results.
+
+Barème de correction (0-3 points) :
+Conclusions possibles : le plastique B a la plus grande extensibilité, le plastique A a la plus faible extensibilité, tous les plastiques n'ont pas la même extensibilité.
+Améliorations possibles : indiquer les mesures avant/après, s'assurer que les échantillons ont la même épaisseur, faire des essais supplémentaires, indiquer le nombre de poids ajoutés.
+- 3 points : conclusion valide soutenue par les données ET deux améliorations décrites.
+- 2 points : conclusion valide + une amélioration, OU deux améliorations mais conclusion absente/incorrecte.
+- 1 point : conclusion valide seule, OU une amélioration seule (sans conclusion valide).
+- 0 point : peu ou pas d'information correcte tirée de l'investigation.

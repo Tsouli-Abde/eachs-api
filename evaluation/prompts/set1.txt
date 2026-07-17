@@ -1,0 +1,26 @@
+Question (Acid Rain) :
+A group of students wrote the following procedure for their investigation.
+
+Procedure:
+1. Determine the mass of four different samples.
+2. Pour vinegar in each of four separate, but identical, containers.
+3. Place a sample of one material into one container and label. Repeat with remaining samples, placing a single sample into a single container.
+4. After 24 hours, remove the samples from the containers and rinse each sample with distilled water.
+5. Allow the samples to sit and dry for 30 minutes.
+6. Determine the mass of each sample.
+
+Data (mass in grams):
+Sample | Starting Mass | Ending Mass | Difference
+Marble | 9.8 | 9.4 | -0.4
+Limestone | 10.4 | 9.1 | -1.3
+Wood | 11.2 | 11.2 | 0.0
+Plastic | 7.2 | 7.1 | -0.1
+
+After reading the group's procedure, describe what additional information you would need in order to replicate the experiment. Make sure to include at least three pieces of information.
+
+Barème de correction (0-3 points) :
+Réponses possibles attendues : quantité de vinaigre utilisée par récipient, type de vinaigre utilisé, quels matériaux tester, taille/surface des échantillons, durée du rinçage à l'eau distillée, méthode de séchage, taille/type de récipient.
+- 3 points : la réponse décrit trois informations supplémentaires nécessaires pour reproduire fidèlement l'expérience.
+- 2 points : la réponse décrit deux informations supplémentaires.
+- 1 point : la réponse décrit une information supplémentaire.
+- 0 point : la réponse ne contient pas d'information exacte ou pertinente sur l'expérience.

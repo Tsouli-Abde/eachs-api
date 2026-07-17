@@ -1,0 +1,17 @@
+Question (Cell Membrane) :
+List and describe three processes used by cells to control the movement of substances across the cell membrane.
+
+Barème de correction (0-3 points) :
+Éléments clés attendus :
+- la perméabilité sélective permet à certaines substances de traverser la membrane ;
+- le transport passif : déplacement d'une zone de forte concentration vers une zone de faible concentration ;
+- l'osmose : diffusion de l'eau à travers la membrane ;
+- la diffusion facilitée : la membrane contrôle le passage d'une particule ;
+- le transport actif : la cellule utilise de l'énergie pour déplacer une substance, ou déplacement contre le gradient de concentration ;
+- les pompes : déplacement de particules chargées (sodium, potassium) via protéines de transport ;
+- le transport assisté par membrane : exocytose (fusion de vésicule), endocytose, phagocytose, pinocytose ;
+- les canaux protéiques permettent le passage de molécules spécifiques.
+- 3 points : trois éléments clés présents.
+- 2 points : deux éléments clés présents.
+- 1 point : un élément clé présent.
+- 0 point : autre / aucun élément pertinent.
