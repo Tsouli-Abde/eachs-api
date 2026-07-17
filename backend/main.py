@@ -371,3 +371,7 @@ def demo_js():
 @app.get("/dashboard.app.js")
 def app_js():
     return FileResponse(DASHBOARD_DIR / "dashboard.app.js", media_type="application/javascript")
+
+@app.get("/favicon.svg")
+def favicon():
+    return FileResponse(DASHBOARD_DIR / "favicon.svg", media_type="image/svg+xml")
