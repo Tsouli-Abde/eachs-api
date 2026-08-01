@@ -15,9 +15,15 @@ Usage :
 import argparse
 import json
 import statistics
+import sys
 from collections import Counter
+from pathlib import Path
 
-from metrics import quadratic_weighted_kappa
+# La fonction vient de backend/audit.py et non de metrics.py : ce dernier
+# analyse ses arguments au niveau module, si bien que l'importer déclencherait
+# son propre CLI.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+from audit import quadratic_weighted_kappa  # noqa: E402
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--a", required=True)
