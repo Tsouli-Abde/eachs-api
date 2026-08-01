@@ -37,3 +37,8 @@ class EvaluationResponse(BaseModel):
     log_id: str
     backend: Optional[str] = None
     file_type: Optional[str] = None
+    # Contexte technique remonté à l'appelant : le versionnement du prompt est
+    # une exigence d'audit trail, et manipulation_detected permet de mesurer la
+    # robustesse depuis un client externe (campagnes de red teaming).
+    prompt_version: Optional[str] = None
+    manipulation_detected: bool = False

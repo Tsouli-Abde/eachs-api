@@ -77,8 +77,28 @@ Reponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou apres, sans ba
 
 # ─── Parseur ──────────────────────────────────────────────────────────
 
+class ResponseParseError(ValueError):
+    """
+    Le modèle a répondu, mais sa sortie n'est pas exploitable comme évaluation.
+
+    Distinguée des erreurs d'appel (réseau, quota, backend indisponible) : une
+    sortie illisible donne lieu à un repli en confiance faible qui reste tracé
+    dans le journal, alors qu'un backend injoignable doit remonter en erreur.
+    """
+
+    def __init__(self, raw: str):
+        super().__init__("Sortie du modèle non exploitable")
+        self.raw = (raw or "")[:500]
+
+
 def parse_response(raw: str) -> dict:
-    raw = raw.strip()
+    """
+    Analyseur tolérant : extrait l'objet JSON d'une sortie partiellement
+    conforme (bloc markdown, texte avant/après, score sous forme de chaîne).
+    Lève ResponseParseError si rien d'exploitable n'en sort.
+    """
+    original = raw or ""
+    raw = original.strip()
     if "```" in raw:
         parts = raw.split("```")
         for part in parts:
@@ -92,10 +112,29 @@ def parse_response(raw: str) -> dict:
     end   = raw.rfind("}") + 1
     if start != -1 and end > start:
         raw = raw[start:end]
-    data = json.loads(raw)
-    # Normaliser manipulation_detected
-    if "manipulation_detected" not in data:
-        data["manipulation_detected"] = False
+
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise ResponseParseError(original) from e
+
+    if not isinstance(data, dict):
+        raise ResponseParseError(original)
+
+    # Le score est le seul champ dont l'absence rend la sortie inutilisable.
+    if "score" not in data:
+        raise ResponseParseError(original)
+    try:
+        data["score"] = float(data["score"])
+    except (TypeError, ValueError) as e:
+        raise ResponseParseError(original) from e
+
+    # Champs secondaires : on complète plutôt que de rejeter.
+    if data.get("confidence") not in ("high", "medium", "low"):
+        data["confidence"] = "low"   # format inattendu -> prudence
+    if not isinstance(data.get("feedback"), str) or not data["feedback"].strip():
+        data["feedback"] = "Aucun commentaire exploitable produit par le modèle."
+    data["manipulation_detected"] = bool(data.get("manipulation_detected", False))
     return data
 
 
@@ -165,30 +204,51 @@ def evaluate(request) -> dict:
     prompt = build_prompt(request)
 
     if AI_BACKEND == "local":
-        result       = evaluate_with_ollama(prompt)
+        runner       = evaluate_with_ollama
         backend_used = f"ollama/{OLLAMA_MODEL}"
     elif AI_BACKEND == "openrouter":
-        result       = evaluate_with_openrouter(prompt)
+        runner       = evaluate_with_openrouter
         backend_used = f"openrouter/{OPENROUTER_MODEL}"
     elif AI_BACKEND == "internal":
-        result       = evaluate_with_internal(prompt)
+        runner       = evaluate_with_internal
         backend_used = f"internal/{INTERNAL_MODEL}"
     else:
-        result       = evaluate_with_gemini(prompt)
+        runner       = evaluate_with_gemini
         backend_used = f"gemini/{GEMINI_MODEL}"
 
-    # Forcer score=0 si manipulation detectee
+    # Repli sur sortie illisible : l'evaluation reste tracee dans le journal
+    # (tracabilite par construction) et part en revision humaine, au lieu de
+    # disparaitre en erreur 500. Les erreurs d'appel, elles, remontent.
+    parse_failed = False
+    try:
+        result = runner(prompt)
+    except ResponseParseError:
+        parse_failed = True
+        result = {
+            "score": 0,
+            "feedback": "[FORMAT] Le modele n'a pas produit d'evaluation exploitable. "
+                        "Copie a corriger manuellement.",
+            "confidence": "low",
+            "manipulation_detected": False,
+        }
+
+    # Regle de securite : manipulation detectee -> note annulee ET revision
+    # humaine imposee, quel que soit le type de tache.
     if result.get("manipulation_detected"):
         result["score"]    = 0
         result["feedback"] = "[ALERTE SECURITE] Tentative de manipulation du correcteur detectee. Note annulee. " + result.get("feedback", "")
-        result["confidence"] = "high"
 
     requires_review = REQUIRES_REVIEW.get(request.task_type, True)
-    if result.get("confidence") == "low":
+    if (result.get("confidence") == "low"
+            or result.get("manipulation_detected")
+            or parse_failed):
         requires_review = True
 
+    # Le modele peut sortir de l'echelle ; on borne avant journalisation.
+    score = max(0.0, min(float(request.max_score), float(result["score"])))
+
     return {
-        "proposed_score":       float(result["score"]),
+        "proposed_score":       score,
         "feedback":             result["feedback"],
         "confidence":           result.get("confidence", "medium"),
         "requires_human_review": requires_review,
@@ -196,4 +256,5 @@ def evaluate(request) -> dict:
         "prompt_used":          prompt,
         "backend":              backend_used,
         "manipulation_detected": result.get("manipulation_detected", False),
+        "parse_failed":         parse_failed,
     }
