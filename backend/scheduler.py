@@ -182,20 +182,56 @@ Réponds UNIQUEMENT avec le barème en une ligne : "Xpts : critère 1. Xpts : cr
         third = int(max_score / 3)
         return f"{third}pts : pertinence. {third}pts : concepts. {max_score - 2*third}pts : clarté."
 
-def detect_task_type(question: str) -> str:
-    q = question.lower()
-    if any(w in q for w in ["qcm", "choix multiple", "cochez", "sélectionnez"]):
+# Options d'un questionnaire : « A) … B) … C) … », ou « a. … b. … ».
+_OPTIONS_RE = re.compile(r"(?:^|[\s(])([A-Da-d])[)\.]\s+\S")
+
+# Consigne de longueur explicite : signal plus fiable que le verbe de la
+# consigne, car « décrivez en une phrase » attend une réponse courte alors que
+# le verbe seul oriente vers la rédaction.
+_BRIEVETE = ["en une phrase", "en deux phrases", "en une ou deux phrases",
+             "en quelques mots", "en quelques lignes", "brièvement",
+             "deux phrases maximum", "une phrase maximum", "réponse courte",
+             "définition courte"]
+
+_FORMEL = ["démontrez", "prouvez", "calculez", "résolvez", "démonstration",
+           "preuve formelle", "exercice formel", "par récurrence"]
+
+_REDACTION = ["expliquez", "décrivez", "discutez", "analysez", "comparez",
+              "justifiez", "développez", "dissertez", "rédigez", "présentez",
+              "dissertation", "étude de cas"]
+
+
+def detect_task_type(question: str, title: str = "") -> str:
+    """
+    Détermine le type de tâche à partir de l'énoncé, et du titre du devoir
+    quand il est fourni.
+
+    L'ordre des tests traduit la fiabilité décroissante des indices. La
+    présence d'options numérotées est un indice de structure, qui identifie un
+    questionnaire même quand l'énoncé ne contient jamais le mot « QCM ». Une
+    consigne de longueur explicite passe avant les verbes de consigne, car
+    « décrivez en une ou deux phrases » attend une réponse courte. Le repli
+    reste conservateur : en cas de doute sur un texte long, la rédaction, qui
+    impose la révision humaine.
+    """
+    texte = f"{title}\n{question}"
+    q = texte.lower()
+
+    if any(w in q for w in ["qcm", "choix multiple", "cochez", "sélectionnez",
+                            "questionnaire à choix"]):
         return "qcm"
-    elif any(w in q for w in ["démontrez", "prouvez", "calculez", "résolvez"]):
+    # Au moins trois propositions distinctes : évite de confondre une
+    # énumération ponctuelle avec un questionnaire.
+    if len({m.lower() for m in _OPTIONS_RE.findall(texte)}) >= 3:
+        return "qcm"
+
+    if any(w in q for w in _FORMEL):
         return "formal"
-    elif any(w in q for w in ["expliquez", "décrivez", "discutez", "analysez",
-                               "comparez", "justifiez", "développez", "dissertez",
-                               "rédigez", "présentez"]):
-        return "essay"
-    elif len(q) > 100:
-        return "essay"
-    else:
+    if any(w in q for w in _BRIEVETE):
         return "short_answer"
+    if any(w in q for w in _REDACTION):
+        return "essay"
+    return "essay" if len(question) > 100 else "short_answer"
 
 
 # ─── Envoi à EACHS et écriture dans Moodle ───────────────────────────
@@ -290,7 +326,7 @@ def check_new_submissions():
                         logger.info(f"Nouvelle soumission : cours={course_name} | devoir={assignment_name} | étudiant={user_id} | source={source}")
 
                     rubric = generate_rubric(question, max_score)
-                    task_type = detect_task_type(question)
+                    task_type = detect_task_type(question, assignment_name)
                     logger.info(f"Type={task_type} | Rubric={rubric[:60]}...")
                     student_name = get_student_name(user_id)
 
