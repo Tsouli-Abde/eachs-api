@@ -120,6 +120,17 @@ print(f"{len(items)} copies x {args.repeats} passages ; {len(done)} déjà faits
       f"{len(tasks)} restants (concurrence={args.concurrency})")
 
 
+def to_float(value):
+    """
+    Note de référence optionnelle : un corpus de robustesse n'en comporte pas
+    forcément, ses copies n'ayant pas été notées par un correcteur humain.
+    """
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def process(task):
     global count_done
     item, run = task
@@ -128,8 +139,8 @@ def process(task):
         "item_id": item["item_id"],
         "run_index": run,
         "task_type": item["task_type"],
-        "human_score": float(item["human_score"]),
-        "human_score_2": float(item["human_score_2"]) if item.get("human_score_2") else None,
+        "human_score": to_float(item.get("human_score")),
+        "human_score_2": to_float(item.get("human_score_2")),
         "max_score": float(item["max_score"]),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
@@ -139,6 +150,11 @@ def process(task):
             "confidence": result.get("confidence"),
             "feedback": result.get("feedback"),
             "manipulation_detected": result.get("manipulation_detected", False),
+            # Sans ce champ, impossible de distinguer une évaluation erronée
+            # rattrapée par la révision humaine d'une évaluation erronée partie
+            # en décision automatique — la différence qui fait toute la
+            # gouvernance.
+            "requires_human_review": result.get("requires_human_review"),
             "backend": result.get("backend"),
             "prompt_version": result.get("prompt_version"),
         })
@@ -162,9 +178,17 @@ if args.concurrency <= 1:
         process(task)
 else:
     with ThreadPoolExecutor(max_workers=args.concurrency) as executor:
-        futures = [executor.submit(process, t) for t in tasks]
+        futures = {executor.submit(process, t): t for t in tasks}
         for f in as_completed(futures):
-            f.result()  # relève une éventuelle exception survenue dans un worker
+            try:
+                f.result()
+            except Exception as e:
+                # Une copie qui échoue ne doit pas emporter la campagne
+                # entière : les autres continuent, et la reprise traitera
+                # celle-ci au prochain lancement.
+                item, run = futures[f]
+                print(f"    ECHEC {item['item_id']} run{run} : "
+                      f"{type(e).__name__}: {e}")
 
 out_file.close()
 print(f"Terminé. Résultats dans {out_path}")

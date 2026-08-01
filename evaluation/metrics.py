@@ -63,7 +63,13 @@ with open(args.results, encoding="utf-8") as f:
         if line:
             records.append(json.loads(line))
 
-ok = [r for r in records if "error" not in r and r.get("ai_score") is not None]
+# La note humaine de référence est requise ici : sans elle, aucune concordance
+# n'est calculable. Les corpus de robustesse, qui n'en comportent pas,
+# s'analysent avec redteam_metrics.py.
+ok = [r for r in records
+      if "error" not in r
+      and r.get("ai_score") is not None
+      and r.get("human_score") is not None]
 errors = len(records) - len(ok)
 print(f"{len(records)} enregistrements, {len(ok)} exploitables, {errors} erreurs\n")
 if not ok:
