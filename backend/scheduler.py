@@ -25,6 +25,12 @@ CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 30))
 AI_BACKEND = os.environ.get("AI_BACKEND", "local")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 
+# Périmètre d'activation : liste de shortnames de cours séparés par des
+# virgules. Vide = tous les cours. Déployer l'assistance sur une plateforme
+# entière est rarement souhaitable : un établissement l'active cours par cours,
+# après accord de l'équipe pédagogique. Ce filtre matérialise cette décision.
+EACHS_COURSES = [c.strip() for c in os.environ.get("EACHS_COURSES", "").split(",") if c.strip()]
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [SCHEDULER] %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -72,9 +78,12 @@ def moodle_api(function: str, params: dict) -> dict:
 
 def get_all_courses() -> list:
     result = moodle_api("core_course_get_courses", {})
-    if isinstance(result, list):
-        return [c for c in result if c.get("id", 0) > 1]
-    return []
+    if not isinstance(result, list):
+        return []
+    courses = [c for c in result if c.get("id", 0) > 1]
+    if EACHS_COURSES:
+        courses = [c for c in courses if c.get("shortname") in EACHS_COURSES]
+    return courses
 
 
 def get_assignments(course_id: int) -> list:
@@ -336,7 +345,9 @@ def get_student_name(user_id: int) -> str:
 # ─── Main ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    perimetre = ", ".join(EACHS_COURSES) if EACHS_COURSES else "tous les cours"
     logger.info(f"Démarrage — intervalle={CHECK_INTERVAL}s | backend={AI_BACKEND} | moodle={MOODLE_URL}")
+    logger.info(f"Périmètre d'activation : {perimetre}")
 
     get_moodle_session()
     check_new_submissions()

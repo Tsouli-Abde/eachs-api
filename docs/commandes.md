@@ -31,11 +31,12 @@ Login : `admin` / `Admin1234!`
 > MOODLE_PORT=8085
 > MOODLE_URL=http://localhost:8085
 > ```
-> Sur une instance Moodle **déjà installée**, `wwwroot` reste figé à l'ancien
-> port dans `config.php` : Moodle redirigerait vers 8080. Il faut le corriger
-> une fois le conteneur démarré :
+> L'image utilisée lit `$CFG->wwwroot` depuis `getenv('MOODLE_URL')` : le
+> changement de port est donc pris en compte au redémarrage du conteneur, sans
+> retoucher `config.php`, même sur une instance déjà installée. Vérifier après
+> démarrage que `siteurl` correspond bien :
 > ```bash
-> docker compose exec moodle sed -i "s|\$CFG->wwwroot.*|\$CFG->wwwroot = 'http://localhost:8085';|" /var/www/html/config.php
+> curl -s "http://localhost:8085/webservice/rest/server.php?wstoken=$MOODLE_TOKEN&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json"
 > ```
 
 > ⚠️ `docker compose up` ne démarre **que** Moodle + la base. L'API EACHS tourne

@@ -230,6 +230,13 @@ def get_cmid(assign_id, course_id):
 
 # ── données de seed ───────────────────────────────────────────────────────────
 
+# Suffixe ajouté aux shortnames de cours. Moodle impose des shortnames uniques :
+# sur une instance qui porte déjà des campagnes antérieures, un suffixe (par
+# exemple l'année universitaire) crée un jeu de cours neuf sans rien supprimer.
+# Reporter la même valeur dans EACHS_COURSES (.env) pour que le scheduler
+# n'évalue que ces cours.
+COURSE_SUFFIX = os.environ.get("SEED_COURSE_SUFFIX", "")
+
 COURSES = [
     {"shortname": "IA-M2",  "fullname": "M2 Intelligence Artificielle"},
     {"shortname": "GL-L3",  "fullname": "L3 Génie Logiciel"},
@@ -461,9 +468,11 @@ def main():
     print("\n[1/4] Création des cours...")
     course_ids = {}
     for c in COURSES:
-        cid = create_course(c["shortname"], c["fullname"])
+        # La clé reste le shortname court : les 16 devoirs y font référence.
+        shortname = c["shortname"] + COURSE_SUFFIX
+        cid = create_course(shortname, c["fullname"])
         course_ids[c["shortname"]] = cid
-        print(f"  ✓ {c['shortname']} → id={cid}")
+        print(f"  ✓ {shortname} → id={cid}")
 
     # 2. Créer les étudiants
     print("\n[2/4] Création des étudiants...")
