@@ -10,11 +10,16 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 
+# Le fichier .env doit être chargé AVANT d'importer audit : ce module fige le
+# chemin de la base au moment de son import, à partir de AUDIT_DB_PATH. Importé
+# trop tôt, il retombe sur la base par défaut ; le scheduler consulte alors un
+# journal vide, conclut qu'aucune copie n'a été évaluée et relance l'évaluation
+# de toutes les soumissions, archivant au passage les décisions déjà prises.
+load_dotenv()
+
 # Le suivi des soumissions déjà évaluées passe désormais par la base SQLite
 # (backend/audit.py), plus par le fichier audit_log.json.
-from audit import get_last_evaluation_time
-
-load_dotenv()
+from audit import get_last_evaluation_time  # noqa: E402
 
 MOODLE_URL = os.environ.get("MOODLE_URL", "http://localhost:8080")
 MOODLE_TOKEN = os.environ.get("MOODLE_TOKEN")
