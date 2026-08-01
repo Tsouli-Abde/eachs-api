@@ -164,7 +164,28 @@ def get_submission_text(submission: dict) -> tuple:
 
 
 # ─── Génération rubric et détection type ─────────────────────────────
-def generate_rubric(question: str, max_score: float) -> str:
+
+# Un barème par devoir, et non par copie. Le générer à chaque soumission
+# produisait un barème différent pour chaque étudiant d'un même devoir : les
+# copies n'étaient alors plus jugées à la même aune, ce qui contredit
+# l'exigence d'équité et rend toute comparaison entre copies infondée. Le
+# barème est ici une propriété du devoir ; à terme il doit être validé par
+# l'enseignant avant usage, ce que ce cache prépare.
+_rubric_cache = {}
+
+
+def generate_rubric(question: str, max_score: float, assignment_id=None) -> str:
+    if assignment_id is not None and assignment_id in _rubric_cache:
+        return _rubric_cache[assignment_id]
+
+    rubric = _generate_rubric_uncached(question, max_score)
+    if assignment_id is not None:
+        _rubric_cache[assignment_id] = rubric
+        logger.info(f"Barème fixé pour le devoir {assignment_id} : {rubric[:70]}...")
+    return rubric
+
+
+def _generate_rubric_uncached(question: str, max_score: float) -> str:
     prompt = f"""Tu es un enseignant. Génère un barème court pour cette question.
 Question : {question}
 Note maximale : {max_score}
@@ -325,7 +346,7 @@ def check_new_submissions():
                     else:
                         logger.info(f"Nouvelle soumission : cours={course_name} | devoir={assignment_name} | étudiant={user_id} | source={source}")
 
-                    rubric = generate_rubric(question, max_score)
+                    rubric = generate_rubric(question, max_score, assignment_id)
                     task_type = detect_task_type(question, assignment_name)
                     logger.info(f"Type={task_type} | Rubric={rubric[:60]}...")
                     student_name = get_student_name(user_id)
