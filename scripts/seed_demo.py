@@ -37,22 +37,36 @@ def api(fn, params, method="GET"):
     return data
 
 def get_sesskey():
-    r = requests.get(
-        f"{MOODLE_URL}/login/index.php",
-        timeout=30
-    )
-    m = re.search(r'name="logintoken" value="([^"]+)"', r.text)
-    logintoken = m.group(1) if m else ""
+    """
+    Ouvre une session admin et récupère son sesskey.
+
+    Le logintoken doit être lu DANS la session qui postera le formulaire :
+    Moodle le lie à la session, et un jeton obtenu hors session produit une
+    connexion silencieusement anonyme — le sesskey renvoyé est alors celui d'un
+    visiteur, et toute création ultérieure échoue sans message clair.
+    """
     s = requests.Session()
+    r = s.get(f"{MOODLE_URL}/login/index.php", timeout=30)
+    m = re.search(r'name="logintoken" value="([^"]+)"', r.text)
     s.post(f"{MOODLE_URL}/login/index.php", data={
         "username": MOODLE_USER, "password": MOODLE_PASS,
-        "logintoken": logintoken
-    }, timeout=30)
+        "logintoken": m.group(1) if m else ""
+    }, timeout=30, allow_redirects=True)
     r2 = s.get(f"{MOODLE_URL}/", timeout=30)
+    if "logout" not in r2.text.lower():
+        raise RuntimeError(
+            "Connexion admin à Moodle échouée : vérifier MOODLE_ADMIN_USER / "
+            "MOODLE_ADMIN_PASSWORD dans .env")
     m2 = re.search(r'"sesskey":"([^"]+)"', r2.text)
     return s, m2.group(1) if m2 else ""
 
 def create_course(shortname, fullname, category=1):
+    """Idempotent : réutilise le cours si son shortname existe déjà."""
+    existing = api("core_course_get_courses", {})
+    if isinstance(existing, list):
+        for c in existing:
+            if c.get("shortname") == shortname:
+                return c["id"]
     data = api("core_course_create_courses", {
         "courses[0][fullname]":  fullname,
         "courses[0][shortname]": shortname,
@@ -68,7 +82,41 @@ def enrol_user(userid, courseid, roleid=5):
         "enrolments[0][courseid]": courseid,
     }, "POST")
 
+
+def service_user_id():
+    """Identifiant de l'utilisateur rattaché au jeton de service web."""
+    return api("core_webservice_get_site_info", {}).get("userid")
+
+
+def enrol_service_user(courseid):
+    """
+    Inscrit l'utilisateur du jeton comme enseignant dans le cours.
+
+    Sans cette inscription, mod_assign_get_submissions et
+    mod_assign_get_assignments répondent « User is not enrolled or does not
+    have requested capability » : les devoirs existent mais restent invisibles
+    au scheduler, qui n'évalue alors rien du tout.
+    """
+    uid = service_user_id()
+    if uid:
+        enrol_user(uid, courseid, roleid=3)   # 3 = enseignant éditeur
+    return uid
+
+def find_user(username):
+    """Retourne l'id d'un utilisateur existant, ou None."""
+    data = api("core_user_get_users", {
+        "criteria[0][key]":   "username",
+        "criteria[0][value]": username,
+    })
+    users = data.get("users", []) if isinstance(data, dict) else []
+    return users[0]["id"] if users else None
+
+
 def create_user(username, firstname, lastname, password=None):
+    """Idempotent : réutilise le compte s'il existe, pour que le seed soit rejouable."""
+    existing = find_user(username)
+    if existing:
+        return existing
     if not password:
         password = firstname + "1234!"
     data = api("core_user_create_users", {
@@ -80,7 +128,21 @@ def create_user(username, firstname, lastname, password=None):
     }, "POST")
     return data[0]["id"]
 
+def find_assign(courseid, name):
+    """Retourne l'id d'un devoir portant ce nom dans le cours, ou None."""
+    data = api("mod_assign_get_assignments", {"courseids[0]": courseid})
+    for c in data.get("courses", []):
+        for a in c.get("assignments", []):
+            if a["name"] == name:
+                return a["id"]
+    return None
+
+
 def create_assign(courseid, name, description, grade=100):
+    """Idempotent : ne recrée pas un devoir déjà présent sous le même nom."""
+    existing = find_assign(courseid, name)
+    if existing:
+        return existing
     sess, sesskey = get_sesskey()
     payload = {
         "sesskey": sesskey,
@@ -183,37 +245,73 @@ def create_assign(courseid, name, description, grade=100):
     return None
 
 def submit_text(assignment_id, user_id, text, password):
-    """Soumet un texte en ligne en tant qu'étudiant."""
+    """
+    Soumet un texte en ligne en tant qu'étudiant.
+
+    Les champs cachés du formulaire sont relus sur la page plutôt que codés en
+    dur : Moodle en attend plusieurs qui varient selon la version et la
+    configuration du devoir (lastmodified, userid, itemid du filemanager…), et
+    un seul manquant fait échouer l'enregistrement silencieusement, en laissant
+    une soumission vide au statut « new » que le scheduler ignore ensuite.
+
+    Retourne True si le texte est bien enregistré.
+    """
+    cmid = _assign_cmid.get(assignment_id, 0)
+    username = _user_map.get(user_id, {}).get("username", "")
     s = requests.Session()
-    # Login étudiant
+
     r0 = s.get(f"{MOODLE_URL}/login/index.php", timeout=30)
     m = re.search(r'name="logintoken" value="([^"]+)"', r0.text)
-    logintoken = m.group(1) if m else ""
     s.post(f"{MOODLE_URL}/login/index.php", data={
-        "username": _user_map.get(user_id, {}).get("username", ""),
+        "username": username,
         "password": password,
-        "logintoken": logintoken,
-    }, timeout=30)
+        "logintoken": m.group(1) if m else "",
+    }, timeout=30, allow_redirects=True)
 
-    # Récupérer la page du devoir
-    r1 = s.get(f"{MOODLE_URL}/mod/assign/view.php?id={_assign_cmid.get(assignment_id, 0)}&action=editsubmission", timeout=30)
-    sesskey_m = re.search(r'"sesskey":"([^"]+)"', r1.text)
-    sesskey   = sesskey_m.group(1) if sesskey_m else ""
-    itemid_m  = re.search(r'name="onlinetext_editor\[itemid\]" value="(\d+)"', r1.text)
-    itemid    = itemid_m.group(1) if itemid_m else "0"
+    r1 = s.get(f"{MOODLE_URL}/mod/assign/view.php?id={cmid}&action=editsubmission",
+               timeout=30)
+    if "_qf__mod_assign_submission_form" not in r1.text:
+        print(f"    ✗ formulaire de soumission inaccessible (user={user_id}, cm={cmid})")
+        return False
 
-    # Soumettre
-    s.post(f"{MOODLE_URL}/mod/assign/view.php", data={
-        "id":                      _assign_cmid.get(assignment_id, 0),
-        "action":                  "savesubmission",
-        "sesskey":                 sesskey,
+    # Tous les champs cachés du formulaire, tels que Moodle les fournit.
+    payload = {}
+    for tag in re.findall(r'<input[^>]*type="hidden"[^>]*>', r1.text):
+        name = re.search(r'name="([^"]+)"', tag)
+        value = re.search(r'value="([^"]*)"', tag)
+        if name:
+            payload[name.group(1)] = value.group(1) if value else ""
+
+    # Le libellé du bouton dépend de la langue de l'interface Moodle et fait
+    # partie des données validées : on le relit au lieu de le coder en dur.
+    label = "Save changes"
+    for tag in re.findall(r'<input[^>]*type="submit"[^>]*>', r1.text):
+        if 'name="submitbutton"' in tag:
+            value = re.search(r'value="([^"]*)"', tag)
+            if value:
+                label = value.group(1)
+            break
+
+    payload.update({
         "onlinetext_editor[text]": text,
-        "onlinetext_editor[format]": "1",
-        "onlinetext_editor[itemid]": itemid,
-        "_qf__mod_assign_submission_onlinetext_form": "1",
-        "submitbutton": "Save changes",
-    }, timeout=30)
-    print(f"    → Soumission texte : user={user_id}")
+        "submitbutton": label,
+    })
+    s.post(f"{MOODLE_URL}/mod/assign/view.php", data=payload, timeout=30,
+           allow_redirects=True)
+
+    # Vérification : une soumission enregistree n'est plus au statut "new".
+    check = api("mod_assign_get_submissions", {"assignmentids[0]": assignment_id})
+    for a in check.get("assignments", []):
+        for sub in a.get("submissions", []):
+            if sub.get("userid") == user_id:
+                status = sub.get("status")
+                if status == "submitted":
+                    print(f"    → Soumission enregistree : user={user_id} ({status})")
+                    return True
+                print(f"    ✗ Soumission non prise en compte : user={user_id} (statut={status})")
+                return False
+    print(f"    ✗ Soumission introuvable : user={user_id}")
+    return False
 
 # maps globaux remplis au fur et à mesure
 _user_map    = {}   # user_id -> {username, password}
@@ -472,7 +570,8 @@ def main():
         shortname = c["shortname"] + COURSE_SUFFIX
         cid = create_course(shortname, c["fullname"])
         course_ids[c["shortname"]] = cid
-        print(f"  ✓ {shortname} → id={cid}")
+        uid = enrol_service_user(cid)
+        print(f"  ✓ {shortname} → id={cid} (utilisateur de service {uid} inscrit comme enseignant)")
 
     # 2. Créer les étudiants
     print("\n[2/4] Création des étudiants...")
