@@ -87,6 +87,26 @@ OLLAMA_MODEL=mistral
 CHECK_INTERVAL=10           # Secondes entre chaque vérification (10 tests, 60 prod)
 ```
 
+Paramètres facultatifs, tous avec un défaut qui préserve le comportement
+d'origine quand ils ne sont pas définis :
+
+```
+MOODLE_PORT=8085            # Port de Moodle si 8080 est déjà pris (défaut 8080)
+EACHS_COURSES=IA-M2,GL-L3   # Cours où l'assistance est activée (vide = tous)
+AUDIT_DB_PATH=data/audit_moodle.sqlite   # Base d'audit (défaut data/audit_log.sqlite)
+SEED_COURSE_SUFFIX=-2026    # Suffixe des cours créés par seed_demo.py
+```
+
+- **`EACHS_COURSES`** matérialise le périmètre d'activation : un établissement
+  n'ouvre pas l'assistance sur tous les cours de sa plateforme d'un coup, la
+  décision se prend cours par cours avec l'équipe pédagogique. Reporter ici les
+  shortnames tels que créés, suffixe compris.
+- **`AUDIT_DB_PATH`** isole les campagnes. Une évaluation en masse dirigée vers
+  la base par défaut écrase celle que lit le tableau de bord : **toujours** en
+  définir une par campagne, une par backend comparé.
+- **`SEED_COURSE_SUFFIX`** permet de rejouer le protocole sur une instance qui
+  porte déjà des campagnes antérieures, Moodle imposant des shortnames uniques.
+
 ---
 
 ## 3. Changer de modèle IA
