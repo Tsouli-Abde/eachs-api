@@ -25,6 +25,19 @@ Attendre : `Apache/2.4.54 configured -- resuming normal operations`
 Moodle accessible sur : **http://localhost:8080**
 Login : `admin` / `Admin1234!`
 
+> **Si le port 8080 est déjà pris** (autre projet en cours), définir `MOODLE_PORT`
+> dans `.env` — le `docker-compose.yml` le lit, avec 8080 pour défaut :
+> ```
+> MOODLE_PORT=8085
+> MOODLE_URL=http://localhost:8085
+> ```
+> Sur une instance Moodle **déjà installée**, `wwwroot` reste figé à l'ancien
+> port dans `config.php` : Moodle redirigerait vers 8080. Il faut le corriger
+> une fois le conteneur démarré :
+> ```bash
+> docker compose exec moodle sed -i "s|\$CFG->wwwroot.*|\$CFG->wwwroot = 'http://localhost:8085';|" /var/www/html/config.php
+> ```
+
 > ⚠️ `docker compose up` ne démarre **que** Moodle + la base. L'API EACHS tourne
 > en **local** (Terminal 2), pas dans Docker, car le backend IA local (Ollama)
 > tourne sur ta machine : un conteneur ne le verrait pas. Ne lance donc pas
