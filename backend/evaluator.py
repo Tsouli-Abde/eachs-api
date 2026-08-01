@@ -1,5 +1,6 @@
 import os
 import json
+import threading
 import requests
 from dotenv import load_dotenv
 from models import TaskType
@@ -150,10 +151,32 @@ def evaluate_with_ollama(prompt: str) -> dict:
     return parse_response(response["message"]["content"])
 
 
+_gemini_client = None
+_gemini_lock = threading.Lock()
+
+
+def _get_gemini_client():
+    """
+    Client Gemini unique, partagé par tous les appels.
+
+    Instancier un client par appel casse le SDK dès que plusieurs évaluations
+    partent en parallèle : le transport HTTP sous-jacent est mutualisé, et la
+    libération d'un client ferme celui des autres, d'où des échecs
+    « Cannot send a request, as the client has been closed » qui ressemblent à
+    une limite de quota sans en être une.
+    """
+    global _gemini_client
+    if _gemini_client is None:
+        with _gemini_lock:
+            if _gemini_client is None:
+                from google import genai
+                _gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    return _gemini_client
+
+
 def evaluate_with_gemini(prompt: str) -> dict:
-    from google import genai
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-    response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+    response = _get_gemini_client().models.generate_content(
+        model=GEMINI_MODEL, contents=prompt)
     return parse_response(response.text)
 
 

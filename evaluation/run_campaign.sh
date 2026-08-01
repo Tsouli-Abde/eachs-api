@@ -24,13 +24,22 @@ MODELE="${2:-mistral}"
 N="${3:-100}"          # nombre de copies ASAP échantillonnées
 PORT="${PORT:-8000}"
 
-# Concurrence : seul le backend interne d'entreprise a supporté les appels
-# parallèles. Ollama et l'API Gemini gratuite échouent au-delà d'un appel à la
-# fois — d'où un débit régulé par --delay pour ces deux-là.
+# Concurrence, calibrée par mesure et non par supposition.
+#
+# Gemini accepte techniquement les appels parallèles ; ce qui le limite est le
+# quota de l'offre gratuite. Mesuré : à 4 requêtes en parallèle, 6 sur 8
+# aboutissent ; à 8, une seule sur 16, le reste en 429. Un appel à la fois
+# toutes les 6 secondes tient le quota, et le backoff du batch runner absorbe
+# les dépassements résiduels.
+#
+# Le backend interne d'entreprise est le seul à avoir soutenu un vrai
+# parallélisme. Pour Ollama, le débit est borné par la machine, pas par un
+# quota : au-delà d'un appel à la fois, les requêtes se mettent simplement en
+# file d'attente sans gain.
 case "$BACKEND" in
-  internal) CONCURRENCY=4 ; DELAY=0  ;;
-  cloud)    CONCURRENCY=1 ; DELAY=13 ;;   # quota gratuit ~5 requêtes/minute
-  *)        CONCURRENCY=1 ; DELAY=1  ;;
+  internal) CONCURRENCY=4 ; DELAY=0 ;;
+  cloud)    CONCURRENCY=1 ; DELAY=6 ;;
+  *)        CONCURRENCY=1 ; DELAY=1 ;;
 esac
 
 SLUG="$(echo "${BACKEND}_${MODELE}" | tr -c 'A-Za-z0-9_.-' '_')"
