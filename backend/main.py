@@ -108,6 +108,8 @@ def evaluate_submission(request: EvaluationRequest):
         requires_human_review=result["requires_human_review"],
         log_id=log_id,
         backend=result.get("backend"),
+        prompt_version=result.get("prompt_version"),
+        manipulation_detected=result.get("manipulation_detected", False),
     )
 
 
@@ -168,6 +170,8 @@ async def evaluate_file_submission(
         log_id=log_id,
         backend=result.get("backend"),
         file_type=extraction["file_type"],
+        prompt_version=result.get("prompt_version"),
+        manipulation_detected=result.get("manipulation_detected", False),
     )
 
 
@@ -300,7 +304,14 @@ def get_stats():
 @app.get("/stats/kappa")
 def get_kappa():
     logs = get_all_logs()
-    reviewed = [l for l in logs if l["human_final_score"] is not None and l["max_score"] > 0]
+    # Un rejet signifie « je refuse cette évaluation », pas « la note est 0 » :
+    # la note provisoire nulle n'est pas un jugement de l'enseignant sur la
+    # copie. L'inclure fabriquerait un désaccord maximal qui effondre le kappa.
+    excluded_rejected = [l for l in logs if l["human_decision"] == "rejected"]
+    reviewed = [l for l in logs
+                if l["human_final_score"] is not None
+                and l["human_decision"] != "rejected"
+                and l["max_score"] > 0]
 
     if len(reviewed) < 2:
         return {"message": "Pas assez de données pour calculer le kappa (minimum 2 évaluations révisées)"}
@@ -341,6 +352,10 @@ def get_kappa():
         "n_evaluated": n,
         "quadratic_weighted_kappa": round(kappa, 4),
         "interpretation": interpretation,
+        # Explicité pour l'audit : la valeur du kappa dépend de la façon dont
+        # les notes continues sont ramenées sur une échelle ordinale.
+        "discretisation": f"{n_categories} classes de {round(100 / n_categories)}% de la note maximale",
+        "excluded_rejected": len(excluded_rejected),
         "pairs": [
             {
                 "log_id": l["log_id"],
