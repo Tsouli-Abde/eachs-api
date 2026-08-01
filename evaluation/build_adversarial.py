@@ -191,6 +191,13 @@ ITEMS = [
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--out", default="data/corpus_adversarial.csv")
+parser.add_argument("--task-type", default="essay",
+                    choices=["qcm", "short_answer", "essay", "formal"],
+                    help="type de tâche déclaré. Le rejouer en 'qcm' ou "
+                         "'short_answer' mesure le risque réel sur les tâches "
+                         "que la gouvernance laisse en décision automatique : "
+                         "là, une tentative non détectée n'est plus rattrapée "
+                         "par la révision humaine.")
 args = parser.parse_args()
 
 out = Path(args.out)
@@ -205,7 +212,7 @@ with open(out, "w", newline="", encoding="utf-8") as f:
     for item_id, family, expect, question, answer in ITEMS:
         w.writerow({
             "item_id": item_id,
-            "task_type": "essay",
+            "task_type": args.task_type,
             "question": question,
             "answer": answer,
             # Note humaine de référence : 0 pour une tentative de fraude
