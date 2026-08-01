@@ -4,8 +4,10 @@ audit.py — Journal d'audit EACHS sur SQLite.
 Remplace l'ancienne persistance JSON (audit_log.json) par une base SQLite :
 - thread-safe (transactions), pas de corruption en écriture concurrente
   (l'API et le scheduler écrivent en parallèle) ;
-- append/upsert par (student_id, assignment_id) : une nouvelle soumission
-  du même étudiant sur le même devoir met à jour son enregistrement ;
+- append-only : une nouvelle soumission du même étudiant sur le même devoir
+  archive la version précédente (superseded_at) au lieu de l'écraser, ce qui
+  préserve la décision humaine déjà prise — un journal d'audit ne perd pas
+  la trace d'une décision d'enseignant ;
 - même structure de champs qu'avant + reviewer_id (identifiant du réviseur,
   qui complète le graphe PROV : l'agent enseignant devient identifiable).
 
@@ -47,10 +49,12 @@ FIELDS = [
     "proposed_score", "max_score", "confidence", "feedback",
     "requires_human_review", "backend", "manipulation_detected",
     "human_final_score", "human_decision", "human_comment", "reviewed_at",
-    "reviewer_id",  # nouveau : identifiant du réviseur (PROV : agent enseignant)
+    "reviewer_id",       # identifiant du réviseur (PROV : agent enseignant)
+    "revision_index",    # 0 = première évaluation, n = n-ième re-soumission
+    "superseded_at",     # non NULL = version archivée, remplacée par une plus récente
 ]
 
-_SCHEMA = """
+_SCHEMA_TABLE = """
 CREATE TABLE IF NOT EXISTS audit_log (
     log_id TEXT PRIMARY KEY,
     timestamp TEXT NOT NULL,
@@ -65,18 +69,39 @@ CREATE TABLE IF NOT EXISTS audit_log (
     manipulation_detected INTEGER,
     human_final_score REAL, human_decision TEXT,
     human_comment TEXT, reviewed_at TEXT,
-    reviewer_id TEXT
+    reviewer_id TEXT,
+    revision_index INTEGER DEFAULT 0,
+    superseded_at TEXT
 );
+"""
+
+# Index créés après les migrations : sur une base préexistante, la colonne
+# indexée peut ne pas encore avoir été ajoutée par ALTER TABLE.
+_SCHEMA_INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_assignment ON audit_log (assignment_id);
 CREATE INDEX IF NOT EXISTS idx_student    ON audit_log (student_id);
 CREATE INDEX IF NOT EXISTS idx_tasktype   ON audit_log (task_type);
+CREATE INDEX IF NOT EXISTS idx_active     ON audit_log (superseded_at);
 """
+
+# Colonnes ajoutées après coup : les bases créées par une version antérieure
+# doivent les recevoir sans perdre leur contenu.
+_MIGRATIONS = {
+    "reviewer_id":    "ALTER TABLE audit_log ADD COLUMN reviewer_id TEXT",
+    "revision_index": "ALTER TABLE audit_log ADD COLUMN revision_index INTEGER DEFAULT 0",
+    "superseded_at":  "ALTER TABLE audit_log ADD COLUMN superseded_at TEXT",
+}
 
 
 def _conn():
     c = sqlite3.connect(DB_FILE, timeout=30)
     c.row_factory = sqlite3.Row
-    c.executescript(_SCHEMA)
+    c.executescript(_SCHEMA_TABLE)
+    existing = {r["name"] for r in c.execute("PRAGMA table_info(audit_log)")}
+    for column, statement in _MIGRATIONS.items():
+        if column not in existing:
+            c.execute(statement)
+    c.executescript(_SCHEMA_INDEXES)
     return c
 
 
@@ -92,6 +117,8 @@ def insert_raw(entry: dict) -> None:
     data = {k: entry.get(k) for k in FIELDS}
     data["requires_human_review"] = int(bool(data.get("requires_human_review")))
     data["manipulation_detected"] = int(bool(data.get("manipulation_detected")))
+    if data.get("revision_index") is None:
+        data["revision_index"] = 0
     cols = ", ".join(FIELDS)
     marks = ", ".join("?" for _ in FIELDS)
     with _lock, _conn() as c:
@@ -102,10 +129,17 @@ def insert_raw(entry: dict) -> None:
 def write_log(request, result: dict) -> str:
     """
     Enregistre une évaluation.
-    Upsert par (student_id, assignment_id) : une nouvelle soumission du même
-    étudiant sur le même devoir met à jour l'enregistrement existant et
-    réinitialise la décision humaine (la réponse a changé).
-    Signature identique à l'ancien audit.py — main.py n'a rien à changer.
+
+    Journal append-only : une nouvelle soumission du même étudiant sur le même
+    devoir n'écrase pas l'enregistrement précédent, elle l'archive
+    (`superseded_at` horodaté) et crée une nouvelle version (`revision_index`
+    incrémenté). La décision humaine éventuellement prise sur la version
+    précédente est ainsi conservée, ce qu'exige un journal d'audit : écraser
+    une décision d'enseignant en supprimerait la trace.
+
+    Seule la version active est retournée par get_all_logs() ; l'historique
+    complet reste accessible via get_all_logs(include_superseded=True).
+    Signature inchangée — main.py et scheduler.py n'ont rien à modifier.
     """
     student_id = str(request.student_id)
     assignment_id = str(request.assignment_id)
@@ -131,52 +165,69 @@ def write_log(request, result: dict) -> str:
         "requires_human_review": int(bool(result["requires_human_review"])),
         "backend": result.get("backend", "unknown"),
         "manipulation_detected": int(bool(result.get("manipulation_detected"))),
-        # la réponse a changé -> on repart d'une décision humaine vierge
+        # nouvelle version -> décision humaine vierge (la réponse a changé) ;
+        # la décision prise sur la version précédente reste dans l'archive
         "human_final_score": None,
         "human_decision": None,
         "human_comment": None,
         "reviewed_at": None,
         "reviewer_id": None,
+        "superseded_at": None,
     }
 
     with _lock, _conn() as c:
-        row = c.execute(
-            "SELECT log_id FROM audit_log WHERE assignment_id = ? AND student_id = ?",
+        previous = c.execute(
+            "SELECT log_id, revision_index FROM audit_log "
+            "WHERE assignment_id = ? AND student_id = ? AND superseded_at IS NULL",
             (assignment_id, student_id),
         ).fetchone()
 
-        if row:
-            log_id = row["log_id"]
-            sets = ", ".join(f"{k} = ?" for k in common)
-            c.execute(f"UPDATE audit_log SET {sets} WHERE log_id = ?",
-                      list(common.values()) + [log_id])
-        else:
-            log_id = str(uuid.uuid4())
-            entry = {"log_id": log_id, **common}
-            cols = ", ".join(FIELDS)
-            marks = ", ".join("?" for _ in FIELDS)
-            c.execute(f"INSERT INTO audit_log ({cols}) VALUES ({marks})",
-                      [entry.get(k) for k in FIELDS])
+        revision_index = 0
+        if previous:
+            # On archive la version précédente au lieu de l'écraser.
+            c.execute("UPDATE audit_log SET superseded_at = ? WHERE log_id = ?",
+                      (now, previous["log_id"]))
+            revision_index = (previous["revision_index"] or 0) + 1
+
+        log_id = str(uuid.uuid4())
+        entry = {"log_id": log_id, "revision_index": revision_index, **common}
+        cols = ", ".join(FIELDS)
+        marks = ", ".join("?" for _ in FIELDS)
+        c.execute(f"INSERT INTO audit_log ({cols}) VALUES ({marks})",
+                  [entry.get(k) for k in FIELDS])
 
     return log_id
 
 
 def update_human_decision(log_id: str, final_score: float, decision: str,
                           comment: str = "", reviewer_id: str = None) -> bool:
-    """Enregistre la décision humaine (validated / modified / rejected)."""
+    """
+    Enregistre la décision humaine (validated / modified / rejected).
+    Refuse d'écrire sur une version archivée : la copie a été re-soumise entre
+    l'affichage et la décision, qui porterait alors sur un texte obsolète.
+    """
     with _lock, _conn() as c:
         cur = c.execute(
             "UPDATE audit_log SET human_final_score = ?, human_decision = ?, "
-            "human_comment = ?, reviewed_at = ?, reviewer_id = ? WHERE log_id = ?",
+            "human_comment = ?, reviewed_at = ?, reviewer_id = ? "
+            "WHERE log_id = ? AND superseded_at IS NULL",
             (final_score, decision, comment,
              datetime.utcnow().isoformat() + "Z", reviewer_id, log_id),
         )
         return cur.rowcount > 0
 
 
-def get_all_logs() -> list:
+def get_all_logs(include_superseded: bool = False) -> list:
+    """
+    Versions actives par défaut (ce que voit le dashboard).
+    include_superseded=True retourne l'historique complet, pour l'audit.
+    """
+    query = "SELECT * FROM audit_log"
+    if not include_superseded:
+        query += " WHERE superseded_at IS NULL"
+    query += " ORDER BY timestamp"
     with _conn() as c:
-        rows = c.execute("SELECT * FROM audit_log ORDER BY timestamp").fetchall()
+        rows = c.execute(query).fetchall()
     return [_row_to_dict(r) for r in rows]
 
 
@@ -195,7 +246,7 @@ def get_last_evaluation_time(assignment_id, user_id) -> float:
     with _conn() as c:
         row = c.execute(
             "SELECT timestamp FROM audit_log WHERE assignment_id = ? AND student_id = ? "
-            "ORDER BY timestamp DESC LIMIT 1",
+            "AND superseded_at IS NULL ORDER BY timestamp DESC LIMIT 1",
             (str(assignment_id), str(user_id)),
         ).fetchone()
     if not row or not row["timestamp"]:
