@@ -32,14 +32,15 @@ PORT="${PORT:-8000}"
 # toutes les 6 secondes tient le quota, et le backoff du batch runner absorbe
 # les dépassements résiduels.
 #
-# Le backend interne d'entreprise est le seul à avoir soutenu un vrai
-# parallélisme. Pour Ollama, le débit est borné par la machine, pas par un
-# quota : au-delà d'un appel à la fois, les requêtes se mettent simplement en
-# file d'attente sans gain.
+# Ollama sert lui aussi plusieurs requêtes de front : trois appels simultanés
+# reviennent dans le temps d'un seul appel séquentiel. Le débit y est borné par
+# la machine et non par un quota, donc une concurrence modérée accélère
+# franchement une campagne sans rien faire échouer. Au-delà, la mémoire du
+# poste devient le facteur limitant, d'autant plus vite que le modèle est gros.
 case "$BACKEND" in
   internal) CONCURRENCY=4 ; DELAY=0 ;;
   cloud)    CONCURRENCY=1 ; DELAY=6 ;;
-  *)        CONCURRENCY=1 ; DELAY=1 ;;
+  *)        CONCURRENCY="${CONCURRENCY:-3}" ; DELAY=0 ;;
 esac
 
 SLUG="$(echo "${BACKEND}_${MODELE}" | tr -c 'A-Za-z0-9_.-' '_')"

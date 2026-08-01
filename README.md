@@ -15,11 +15,16 @@ eachs-api/
 │   ├── audit.py          Journal d'audit sur SQLite (thread-safe)
 │   └── scheduler.py      Détection auto des soumissions Moodle
 ├── dashboard/          Interface web (HTML + JS) servie par l'API
-├── evaluation/         Outils de mesure de concordance (QWK)
-│   ├── prepare_asap.py   Prépare un corpus depuis ASAP-SAS
-│   ├── batch_runner.py   Évalue un corpus en masse via l'API
-│   ├── metrics.py        Calcule QWK, accord exact/adjacent, stabilité
-│   └── prompts/          Énoncés des essay sets ASAP-SAS
+├── evaluation/         Outils de mesure (concordance, robustesse, protocole)
+│   ├── prepare_asap.py       Prépare un corpus depuis ASAP-SAS
+│   ├── prepare_aes2.py       Prépare un corpus depuis AES 2.0
+│   ├── batch_runner.py       Évalue un corpus en masse via l'API
+│   ├── metrics.py            Calcule QWK, accord exact/adjacent, stabilité
+│   ├── build_adversarial.py  Construit le corpus de soumissions adverses
+│   ├── redteam_metrics.py    Taux de détection et faux positifs
+│   ├── protocol_report.py    Analyse la campagne Moodle (routage, profils)
+│   ├── run_campaign.sh       Rejoue une campagne complète pour un backend
+│   └── prompts/              Énoncés des essay sets ASAP-SAS
 ├── scripts/            Utilitaires (seed Moodle, migration, maintenance)
 ├── samples/            Exemples de réponses pour tests manuels
 ├── data/               Données runtime (base d'audit, corpus, résultats) — ignoré par git
@@ -100,6 +105,46 @@ python3 evaluation/metrics.py data/results_set1.jsonl --latex
 Sort le QWK IA/humain, le QWK humain/humain (borne haute naturelle), l'accord
 exact/adjacent, la ventilation par confiance déclarée, la stabilité
 inter-passages, et les lignes LaTeX pour le mémoire.
+
+## Campagne complète pour un backend
+
+`run_campaign.sh` rejoue concordance et robustesse à gouvernance constante,
+dans une base d'audit isolée par backend (une campagne de masse ne doit pas
+écraser celle que lit le tableau de bord) :
+
+```bash
+./evaluation/run_campaign.sh local    mistral
+./evaluation/run_campaign.sh cloud    gemini-2.5-flash
+./evaluation/run_campaign.sh internal <modele>   # poste entreprise (VPN)
+```
+
+## Robustesse : soumissions adverses
+
+Le taux de détection se mesure, il ne se postule pas. Le corpus couvre six
+familles d'attaques et inclut des **contrôles légitimes** (copies honnêtes
+traitant de l'injection de prompt), sans lesquels on ne mesurerait jamais les
+faux positifs :
+
+```bash
+python3 evaluation/build_adversarial.py --out data/corpus_adversarial.csv
+python3 evaluation/batch_runner.py --corpus data/corpus_adversarial.csv \
+    --api http://localhost:8000 --out data/results_adversarial.jsonl
+python3 evaluation/redteam_metrics.py --corpus data/corpus_adversarial.csv \
+    --results data/results_adversarial.jsonl --latex
+```
+
+## Campagne Moodle (protocole 4 types × 4 profils)
+
+```bash
+# .env : SEED_COURSE_SUFFIX, EACHS_COURSES, AUDIT_DB_PATH
+python3 scripts/seed_demo.py          # 4 cours, 16 devoirs, 4 profils, 64 copies
+python3 backend/scheduler.py          # évalue le périmètre déclaré
+AUDIT_DB_PATH=data/audit_moodle.sqlite python3 evaluation/protocol_report.py
+```
+
+`EACHS_COURSES` limite le scheduler aux cours où l'assistance a été activée :
+un établissement ne déploie pas un correcteur IA sur toute sa plateforme d'un
+coup, la décision se prend cours par cours.
 
 ## Backends IA
 
