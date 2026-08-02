@@ -120,6 +120,31 @@ partout donnerait déjà 80 % d'accord exact. Le kappa corrige cet effet du
 hasard, l'accord exact non — ce qui justifie le QWK comme métrique de
 référence.
 
+### Stabilité inter-passages (qwen2.5, 30 copies évaluées 5 fois)
+
+```bash
+python3 evaluation/batch_runner.py --corpus data/corpus_set1_rubric.csv \
+    --api http://localhost:8005 --out data/results_qwen_stabilite.jsonl \
+    --repeats 5 --limit 30
+```
+
+| Indicateur | Valeur |
+|---|---|
+| Écart-type moyen des scores | **0,03 point** |
+| Copies notées à l'identique sur les 5 passages | **28/30 (93 %)** |
+| QWK du passage principal, mêmes 30 copies | 0,684 |
+
+Le dispositif est donc reproductible : rejouer une campagne redonne
+pratiquement les mêmes notes, ce qui rend les comparaisons entre backends
+légitimes.
+
+Cette reproductibilité ne dit toutefois rien de la justesse, et le rapprochement
+avec la section suivante le montre : le modèle produit des scores très stables
+alors que sa confiance déclarée n'a aucune valeur prédictive. C'est exactement
+l'avertissement de Chang & Ginter — une faible variance entre passages répétés
+ne peut pas servir d'indicateur de fiabilité, et ne saurait donc fonder un
+mécanisme d'escalade.
+
 ### Confiance déclarée : non informative
 
 | Niveau déclaré | n | QWK du sous-ensemble |
@@ -127,10 +152,17 @@ référence.
 | high | 33 | 0,096 |
 | medium | 31 | 0,004 |
 
-Le modèle déclare une confiance élevée sur des évaluations dont l'accord avec
-l'humain est proche du hasard. La règle transverse « confiance faible force la
-révision » repose donc sur un signal peu fiable — limite à assumer, qui
-prolonge l'avertissement de Chang & Ginter sur la stabilité.
+Sur le sous-échantillon de 30 copies du test de stabilité, les valeurs
+descendent même légèrement sous zéro (−0,098 pour `high`, −0,053 pour
+`medium`), mais les effectifs y sont trop faibles pour conclure à autre chose
+qu'une absence de lien.
+
+Le modèle déclare donc une confiance élevée sur des évaluations dont l'accord
+avec l'humain est proche du hasard, alors que le QWK d'ensemble est
+substantiel : le signal n'isole pas les copies bien évaluées. La règle
+transverse « confiance faible force la révision » repose sur un indicateur sans
+valeur prédictive — limite à assumer, d'autant que la stabilité mesurée plus
+haut ne peut pas non plus lui servir de substitut.
 
 ---
 
